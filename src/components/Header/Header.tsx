@@ -41,6 +41,12 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
         >
           Memory 변천사
         </NavLink>
+        <NavLink
+          to="/quiz"
+          className={({ isActive }) => `${s.navLink} ${s.navLinkDesktop} ${isActive ? s.navLinkActive : ''}`}
+        >
+          문제 풀기
+        </NavLink>
         <ThemeToggle />
       </nav>
     </header>

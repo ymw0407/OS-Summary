@@ -17,6 +17,12 @@ const SchedulerEvolution = lazy(() =>
 const MemoryEvolution = lazy(() =>
   import('./pages/MemoryEvolution').then((m) => ({ default: m.MemoryEvolution })),
 );
+const QuizOverview = lazy(() =>
+  import('./pages/QuizOverview').then((m) => ({ default: m.QuizOverview })),
+);
+const ChapterQuiz = lazy(() =>
+  import('./pages/ChapterQuiz').then((m) => ({ default: m.ChapterQuiz })),
+);
 
 function PageFallback() {
   return <div style={{ padding: '48px', opacity: 0.6 }}>로딩 중…</div>;
@@ -50,6 +56,22 @@ createRoot(document.getElementById('root')!).render(
               element={
                 <Suspense fallback={<PageFallback />}>
                   <MemoryEvolution />
+                </Suspense>
+              }
+            />
+            <Route
+              path="quiz"
+              element={
+                <Suspense fallback={<PageFallback />}>
+                  <QuizOverview />
+                </Suspense>
+              }
+            />
+            <Route
+              path="quiz/:slug"
+              element={
+                <Suspense fallback={<PageFallback />}>
+                  <ChapterQuiz />
                 </Suspense>
               }
             />
