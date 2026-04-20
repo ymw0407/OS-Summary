@@ -168,6 +168,133 @@ const quiz: QuizSet = {
         '전이의 트리거(이벤트)를 서술',
       ],
     },
+
+    // ── 추가 : 객관식 (혼동 포인트) ─────────────────────
+    {
+      id: 'ch01-mc-4',
+      type: 'multiple-choice',
+      prompt:
+        '다음 중 "프로그램" 과 "프로세스" 의 차이에 대한 설명으로 가장 정확한 것은?',
+      options: [
+        { text: '프로그램은 한 번 실행되면 프로세스가 되고, 종료되면 다시 프로그램이 된다.' },
+        { text: '프로그램은 디스크에 저장된 정적 바이트 열이고, 프로세스는 그 프로그램을 실행 중인 동적 인스턴스다.' },
+        { text: '프로세스는 프로그램의 줄임말이다.' },
+        { text: '프로그램과 프로세스는 실행 관점에서는 동일하다.' },
+      ],
+      answerIndex: 1,
+      explanation:
+        '프로그램은 수동적 바이트 열(디스크의 ELF/실행파일), 프로세스는 그 프로그램을 실행 중인 능동적 개체(메모리 + 레지스터 + PCB 등).',
+    },
+    {
+      id: 'ch01-mc-5',
+      type: 'multiple-choice',
+      prompt:
+        '다음 중 커널 공간(kernel space) 에 저장되는 것이 아닌 것은?',
+      options: [
+        { text: 'PCB(Process Control Block)' },
+        { text: 'trap table' },
+        { text: '프로세스의 heap 에 malloc 으로 할당한 객체' },
+        { text: 'file descriptor table' },
+      ],
+      answerIndex: 2,
+      explanation:
+        'malloc 으로 할당된 메모리는 프로세스의 user-space heap 이다. PCB·trap table·fd table 등 OS 가 직접 관리하는 자료구조가 kernel space 에 있다.',
+    },
+
+    // ── 추가 : 코드 빈칸 ─────────────────────────────
+    {
+      id: 'ch01-code-3',
+      type: 'code-blank',
+      language: 'c',
+      prompt:
+        '아래 C 프로그램에서 각 심볼이 놓일 영역을 채우시오 (text/data/bss/heap/stack 중 하나).',
+      segments: [
+        { kind: 'text', text: 'int g_init = 5;      // ' },
+        { kind: 'blank', answers: ['data'], width: 6 },
+        { kind: 'text', text: '\nint g_uninit;        // ' },
+        { kind: 'blank', answers: ['bss'], width: 6 },
+        { kind: 'text', text: '\nconst char *msg      // .rodata / text 계열\n    = "hi";\n\nvoid foo(void) { // 코드는 ' },
+        { kind: 'blank', answers: ['text', 'code'], width: 6 },
+        { kind: 'text', text: '\n    int tmp = 1;   // ' },
+        { kind: 'blank', answers: ['stack'], width: 6 },
+        { kind: 'text', text: '\n    int *p = malloc(4); // ' },
+        { kind: 'blank', answers: ['heap'], width: 6 },
+        { kind: 'text', text: ';\n}\n' },
+      ],
+      explanation:
+        '초기화 전역 → data, 미초기화 전역 → bss, 실행 코드 → text, 지역 변수 → stack, malloc → heap.',
+    },
+
+    // ── 추가 : True / False (혼동 포인트 다수) ───────
+    {
+      id: 'ch01-tf-5',
+      type: 'true-false',
+      prompt:
+        'Running 상태와 Ready 상태는 모두 "CPU 를 점유하고 있다" 는 공통점이 있다.',
+      answer: false,
+      explanation: 'Ready 는 실행 준비만 되어 있을 뿐, CPU 는 Running 프로세스 하나만 점유한다.',
+    },
+    {
+      id: 'ch01-tf-6',
+      type: 'true-false',
+      prompt:
+        'BSS 영역은 로더가 0 으로 초기화해 주므로, C 에서 전역 int 변수를 따로 초기화하지 않아도 0 으로 시작하는 것이 보장된다.',
+      answer: true,
+      explanation:
+        'C 표준도 static/extern 의 기본값 0 을 보장하며, 구현상 BSS 가 이 역할을 한다.',
+    },
+    {
+      id: 'ch01-tf-7',
+      type: 'true-false',
+      prompt:
+        'argv 와 환경변수(envp) 는 heap 의 최하단에 순서대로 배치된다.',
+      answer: false,
+      explanation: '초기 스택 프레임(스택 최상단) 에 배치된다. heap 과는 관계가 없다.',
+    },
+    {
+      id: 'ch01-tf-8',
+      type: 'true-false',
+      prompt:
+        'xv6 의 register context 는 함수 호출 규약상 "호출자가 보존할 레지스터" 만 저장하면 충분하다.',
+      answer: false,
+      explanation:
+        '스케줄러가 강제로 중단했을 수 있으므로 callee-saved 가 아닌 "다시 돌아와 이어서 실행" 에 필요한 모든 상태(PC, SP 등)를 저장해야 한다.',
+    },
+
+    // ── 추가 : 단답 ───────────────────────────────
+    {
+      id: 'ch01-short-3',
+      type: 'short-answer',
+      prompt:
+        '스택 영역이 자라는 방향은 "높은 주소 → 낮은 주소" 와 "낮은 주소 → 높은 주소" 중 어느 쪽인가? (화살표 방향을 text 로)',
+      answers: ['높은 주소 → 낮은 주소', '높→낮', '높은→낮은', 'high to low', '하단으로 자람'],
+      hint: '"높은 주소 → 낮은 주소" 처럼',
+      explanation: '일반적인 x86/ARM 에서 스택은 높은 주소에서 낮은 주소 방향으로 자란다.',
+    },
+    {
+      id: 'ch01-short-4',
+      type: 'short-answer',
+      prompt:
+        '프로세스 상태가 "Running → ? → Ready" 의 순서로 I/O 대기를 거쳐 다시 실행 준비 상태로 돌아올 때, 중간의 상태 이름은?',
+      answers: ['Blocked', 'blocked', 'BLOCKED', 'Waiting'],
+      explanation: 'I/O 같은 이벤트를 기다릴 때는 Blocked(또는 Waiting) 상태.',
+    },
+
+    // ── 추가 : 서술형 ─────────────────────────────
+    {
+      id: 'ch01-essay-3',
+      type: 'essay',
+      prompt:
+        'OS 가 "CPU 가상화" 라는 환상을 제공하기 위해 하는 두 가지 핵심 작업(Time Sharing, Context Switch)을 설명하고, 그 비용을 논하시오.',
+      modelAnswer:
+        'Time Sharing: OS 는 CPU 를 짧은 시간 조각(time slice) 으로 잘라 여러 프로세스에 번갈아 할당한다. 각 프로세스는 "내가 CPU 를 계속 쓰고 있다" 는 환상을 갖는다.\n\nContext Switch: 실행 프로세스를 바꿀 때 OS 는 현재 프로세스의 레지스터 상태(PC, SP, 일반 레지스터, 모드 비트 등)를 PCB 에 저장하고, 다음 프로세스의 PCB 에서 그 상태를 복원한다. 필요하면 페이지 테이블 포인터(CR3 등)도 바꾼다.\n\n비용:\n- 직접 비용: 레지스터 저장·복원, 권한 모드 전환 (수 μs 수준).\n- 간접 비용: 캐시 · TLB 오염으로 전환 직후 miss 가 증가, 파이프라인 재충전 등. 실제로는 직접 비용보다 간접 비용이 더 큰 경우가 많다.\n- 따라서 time slice 를 너무 짧게 하면 전환 비용이 실질 처리량을 먹어버리므로, 반응성과 오버헤드 사이의 균형이 필요하다.',
+      rubric: [
+        'Time sharing / Context switch 개념 구분',
+        '직접 비용 언급',
+        '간접 비용(cache/TLB 오염) 언급',
+        'time slice 선택과 트레이드오프',
+      ],
+    },
   ],
 };
 

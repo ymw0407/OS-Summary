@@ -170,6 +170,124 @@ const quiz: QuizSet = {
         'ASID / context switch 와의 관계(선택)',
       ],
     },
+
+    // ── 추가 : 객관식 ─────────────────────
+    {
+      id: 'ch15-mc-4',
+      type: 'multiple-choice',
+      prompt:
+        '다음 중 "시간 ↔ 공간" 의 대표적 트레이드오프 짝이 아닌 것은?',
+      options: [
+        { text: 'Multi-level page table (공간 절약) vs TLB miss 시 추가 메모리 접근 (시간 비용)' },
+        { text: 'Inverted page table (공간 절약) vs VPN → PFN 조회 어려움 (시간 비용)' },
+        { text: 'TLB (시간 절약) vs MMU 내부 캐시 자원 소비 (공간 비용)' },
+        { text: 'Segmentation (공간 절약) vs TLB 자체 크기 감소 (시간 비용)' },
+      ],
+      answerIndex: 3,
+      explanation: 'Segmentation 은 TLB 크기와 직접 관련이 없다. 나머지 셋이 전형적 트레이드오프.',
+    },
+    {
+      id: 'ch15-mc-5',
+      type: 'multiple-choice',
+      prompt:
+        '메모리 가상화의 "protection → relocation → sparse → fixed → speed → small" 전체 흐름을 관통하는 공통 주제는?',
+      options: [
+        { text: '하드웨어와 OS 가 함께 풀어야 하는 보호·효율 문제' },
+        { text: '프로그래머가 직접 물리 메모리를 관리하게 하는 방향' },
+        { text: '가상화를 없애고 단순화' },
+        { text: '스토리지 계층으로의 이관' },
+      ],
+      answerIndex: 0,
+      explanation: '가상화는 항상 HW/OS 협력 구조 위에서 진화해 왔다.',
+    },
+
+    // ── 추가 : 코드 빈칸 ──────────────────
+    {
+      id: 'ch15-code-3',
+      type: 'code-blank',
+      language: 'c',
+      prompt:
+        '번역 비용 추정: TLB hit rate h, miss 시 추가 접근 비용 m 이다. 평균 번역 비용 식을 채우시오.',
+      segments: [
+        { kind: 'text', text: 'double avg_cost = ' },
+        { kind: 'blank', answers: ['h * 0', '0', '0.0'], width: 6 },
+        { kind: 'text', text: ' + (1 - ' },
+        { kind: 'blank', answers: ['h'], width: 3 },
+        { kind: 'text', text: ') * m;\n// 즉, (1 - h) * m\n' },
+      ],
+      explanation: 'hit 면 비용 0, miss 면 m → 기댓값 (1-h)·m.',
+    },
+
+    // ── 추가 : True / False ─────────────
+    {
+      id: 'ch15-tf-5',
+      type: 'true-false',
+      prompt:
+        '4 단계 page table 에서 TLB miss 당 추가 메모리 접근은 최대 4 회다 (데이터 접근은 제외).',
+      answer: true,
+    },
+    {
+      id: 'ch15-tf-6',
+      type: 'true-false',
+      prompt:
+        'Inverted page table 은 TLB 의 필요성을 없앤다.',
+      answer: false,
+      explanation: 'TLB 는 번역 시간을 줄이기 위한 별개 계층. 테이블 구조와 무관하게 여전히 필요.',
+    },
+    {
+      id: 'ch15-tf-7',
+      type: 'true-false',
+      prompt:
+        'huge page 는 같은 물리 메모리 범위를 가리키는 데 필요한 TLB 엔트리 수를 줄여, 큰 워킹셋 프로그램의 TLB 압박을 완화할 수 있다.',
+      answer: true,
+    },
+    {
+      id: 'ch15-tf-8',
+      type: 'true-false',
+      prompt:
+        '메모리 가상화의 역사는 "외부 단편화를 없애기 위해 가변 크기를 버리고 고정 크기로 간 뒤에도, 테이블의 공간·시간 비용을 번갈아 개선" 하는 방향으로 진행되어 왔다.',
+      answer: true,
+    },
+
+    // ── 추가 : 단답 ───────────────────────
+    {
+      id: 'ch15-short-3',
+      type: 'short-answer',
+      prompt:
+        'TLB hit rate 99%, miss cost 100 사이클이라면 평균 번역 오버헤드는 몇 사이클인가? (숫자만)',
+      answers: ['1', '1 사이클'],
+      hint: '(1-h) · m',
+      explanation: '0.01 × 100 = 1 사이클.',
+    },
+    {
+      id: 'ch15-short-4',
+      type: 'short-answer',
+      prompt:
+        '메모리 가상화에서 "시간↔공간" 트레이드오프의 예를 하나 들어 한 줄로 쓰시오.',
+      answers: [
+        'Multi-Level page table: 공간을 아끼는 대신 TLB miss 시간 비용이 증가',
+        'TLB: 번역 시간을 줄이는 대신 MMU 내부 공간을 소비',
+        'Inverted page table: 테이블 공간을 크게 줄이는 대신 lookup 시간이 증가',
+        'huge page: TLB 공간 효율은 올리지만 internal fragmentation 이 커짐',
+      ],
+      hint: '가상화 기법 하나를 시간/공간 측면에서',
+      explanation: '여러 정답 가능. 위 예시들 모두 허용.',
+    },
+
+    // ── 추가 : 서술형 ─────────────────────
+    {
+      id: 'ch15-essay-3',
+      type: 'essay',
+      prompt:
+        '가상화 계층들(Base/Bound, Segmentation, Paging, TLB, Multi-Level) 의 "남은 문제 → 다음 기법" 연쇄를 간결히 도식화하고, 한 문장씩 설명하시오.',
+      modelAnswer:
+        'Base/Bound → (전체 연속 블록 필요 → 빈 공간 낭비) → Segmentation\nSegmentation → (가변 크기 external fragmentation) → Paging\nPaging → (매 번역마다 2 배 접근 비용) → TLB\nPaging + TLB → (프로세스당 page table 4MB+ 공간 낭비) → Multi-Level Page Table\nMulti-Level → (단계 수만큼 TLB miss 비용 증가) → huge page / 더 빠른 page walker / inverted 등 다양한 보완\n\n각 단계는 "앞 단계가 풀지 못한 남은 문제" 를 겨냥하고, 그 해결책이 다시 새로운 문제를 만들었다. 메모리 가상화의 역사는 한 번에 완성된 것이 아니라 이런 문제 → 해결 → 남은 문제의 반복 위에서 점진적으로 쌓인 결과물이다.',
+      rubric: [
+        '다섯 단계의 연쇄 명확',
+        '각 해결이 남긴 문제 구체 언급',
+        'huge page / inverted / page walker 등 후속 보완 언급(선택)',
+      ],
+    },
   ],
 };
 

@@ -166,6 +166,129 @@ const quiz: QuizSet = {
         '성능·공정성·현실성의 축 전환 언급',
       ],
     },
+
+    // ── 추가 : 객관식 ─────────────────────
+    {
+      id: 'ch07-mc-4',
+      type: 'multiple-choice',
+      prompt:
+        '다음 시나리오 중 "SJF 가 가장 좋지 않은 결과" 를 내는 경우는?',
+      options: [
+        { text: '모든 작업이 거의 같은 길이이고 동시 도착' },
+        { text: '짧은 작업이 먼저 도착, 긴 작업이 뒤늦게 도착' },
+        { text: '긴 작업이 먼저 도착하고, 그 이후에 짧은 작업들이 계속 뒤늦게 도착' },
+        { text: '모든 작업이 I/O-bound' },
+      ],
+      answerIndex: 2,
+      explanation:
+        'SJF 는 non-preemptive 라 먼저 시작된 긴 작업을 끊을 수 없어, 뒤에 도착한 짧은 작업들의 response 가 계속 나빠진다. STCF 가 이 상황을 푸는 동기.',
+    },
+    {
+      id: 'ch07-mc-5',
+      type: 'multiple-choice',
+      prompt:
+        '"스케줄러가 실행 시간(run-time)을 알 수 있다" 는 가정을 제거한 뒤에도 turnaround 측면에서 합리적인 결과를 내는 정책은?',
+      options: [
+        { text: 'FIFO' },
+        { text: 'SJF' },
+        { text: 'MLFQ' },
+        { text: 'STCF' },
+      ],
+      answerIndex: 2,
+      explanation:
+        'MLFQ 는 oracle 가정을 제거하고도 CPU-bound 를 자연스럽게 하위로 내려 SJF 에 가까운 효과를 낸다.',
+    },
+
+    // ── 추가 : 코드 빈칸 ──────────────────
+    {
+      id: 'ch07-code-3',
+      type: 'code-blank',
+      language: 'c',
+      prompt:
+        '실행 시각 기록을 활용해 Turnaround 와 Response 를 계산한다.',
+      segments: [
+        { kind: 'text', text: 'typedef struct proc {\n    double arrival;\n    double first_run;     // 최초 CPU 를 받은 시각 (미정이면 -1)\n    double completion;\n} proc_t;\n\ndouble turnaround(proc_t *p) { return p->completion - p->' },
+        { kind: 'blank', answers: ['arrival'], width: 10 },
+        { kind: 'text', text: '; }\ndouble response(proc_t *p)   { return p->first_run  - p->' },
+        { kind: 'blank', answers: ['arrival'], width: 10 },
+        { kind: 'text', text: '; }\n' },
+      ],
+      explanation: '두 메트릭 모두 arrival 을 기준으로 한다는 점이 핵심.',
+    },
+
+    // ── 추가 : True / False ──────────────
+    {
+      id: 'ch07-tf-5',
+      type: 'true-false',
+      prompt:
+        '공정성(fairness) 과 효율성(throughput) 은 항상 일치하는 목표다.',
+      answer: false,
+      explanation:
+        '예: 우선순위 기반 스케줄은 처리량에 유리할 수 있지만 공정성은 희생될 수 있음.',
+    },
+    {
+      id: 'ch07-tf-6',
+      type: 'true-false',
+      prompt:
+        'MLFQ 는 "Proportional Share(비례 공정)" 범주에 속한다.',
+      answer: false,
+      explanation:
+        '우선순위 + 피드백 기반. 명시적으로 비율을 지정하지 않는다.',
+    },
+    {
+      id: 'ch07-tf-7',
+      type: 'true-false',
+      prompt:
+        'STCF 와 SJF 는 같은 "짧은 것 우선" 철학을 공유하지만, 선점 지원 여부에서 차이가 난다.',
+      answer: true,
+    },
+    {
+      id: 'ch07-tf-8',
+      type: 'true-false',
+      prompt:
+        '실제 리눅스 기본 스케줄러(CFS) 는 전통적 Unix 의 "nice" 값을 의미 있게 반영한다.',
+      answer: true,
+    },
+
+    // ── 추가 : 단답 ───────────────────────
+    {
+      id: 'ch07-short-3',
+      type: 'short-answer',
+      prompt:
+        '다음 정책 중 "선점(preemption) 을 사용한다" 고 볼 수 있는 것을 모두 고르시오. (쉼표로 구분)\nFIFO, SJF, STCF, RR, MLFQ, Lottery, Stride, CFS',
+      answers: [
+        'STCF, RR, MLFQ, Lottery, Stride, CFS',
+        'stcf, rr, mlfq, lottery, stride, cfs',
+        'STCF,RR,MLFQ,Lottery,Stride,CFS',
+      ],
+      hint: 'FIFO 와 SJF 는 non-preemptive',
+      explanation: 'FIFO/SJF 를 제외한 나머지 정책은 선점 가능.',
+    },
+    {
+      id: 'ch07-short-4',
+      type: 'short-answer',
+      prompt:
+        '두 작업 A(3s), B(3s) 가 t=0 에 동시 도착하여 RR(slice=1s) 로 돌 때, 평균 Response time 과 평균 Turnaround 는? (형식: "R=? T=?", 숫자만)',
+      answers: ['R=0.5 T=5.5', 'R=0.5, T=5.5', 'r=0.5 t=5.5'],
+      hint: '소수점 1자리로',
+      explanation:
+        'Response: A first_run=0, B first_run=1 → 평균 0.5. Turnaround: A 완료 t=5(1,3,5 중 5), B 완료 t=6 → 평균 (5+6)/2 = 5.5.',
+    },
+
+    // ── 추가 : 서술형 ─────────────────────
+    {
+      id: 'ch07-essay-3',
+      type: 'essay',
+      prompt:
+        '한 시스템에서 "서버용 배치 작업(CPU-bound)" 과 "데스크톱 앱(I/O-bound, 사용자 인터랙션)" 이 섞여 있을 때 어떤 스케줄러가 적합한지 토론하시오.',
+      modelAnswer:
+        'SJF/STCF 는 실행 시간을 미리 알기 어려우므로 실제 시스템에서 그대로 쓸 수 없다. FIFO 는 convoy effect 로 데스크톱 반응성이 치명적으로 나빠진다. 순수 RR 은 반응성은 좋지만 배치 작업의 turnaround 가 크게 늘어난다.\n\n실전에서 가장 적합한 선택은 두 가지 방향이다.\n1) MLFQ: 인터랙티브 작업은 스스로 자주 양보하므로 상위 큐에 머물며 빠르게 응답하고, CPU-bound 배치 작업은 자연스럽게 하위 큐로 내려가 긴 time slice 로 처리량을 유지한다. Priority Boost 로 배치 작업이 굶지 않도록 한다.\n2) CFS: nice 값으로 데스크톱 프로세스에 낮은 nice 를, 배치에 높은 nice 를 주면 weight 차로 CPU 가 비례 분배된다. RB-tree 의 O(log n) 으로 확장성도 좋다.\n\n현대 리눅스는 기본 CFS 를 쓰고, 특수 케이스에서는 SCHED_FIFO / SCHED_RR 같은 실시간 클래스를 쓸 수 있다. 본 질문의 일반 워크로드에는 CFS + 적절한 nice 가 가장 실용적이다.',
+      rubric: [
+        '각 정책이 왜 부적합/적합한지',
+        'MLFQ / CFS 의 장점을 대조',
+        '실제 리눅스 관행 언급',
+      ],
+    },
   ],
 };
 

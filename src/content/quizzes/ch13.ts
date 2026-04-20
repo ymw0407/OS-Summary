@@ -162,6 +162,120 @@ const quiz: QuizSet = {
         'ASID 방식의 공존 가능성과 공유 페이지 처리',
       ],
     },
+
+    // ── 추가 : 객관식 ─────────────────────
+    {
+      id: 'ch13-mc-4',
+      type: 'multiple-choice',
+      prompt:
+        '배열 연속 접근으로 TLB hit rate 가 높아지는 원인을 locality 로 설명할 때, 더 "직접적으로" 기여하는 것은?',
+      options: [
+        { text: 'Temporal locality (같은 주소 재방문)' },
+        { text: 'Spatial locality (근처 주소 방문)' },
+        { text: '랜덤 locality' },
+        { text: '이 둘과 무관하다.' },
+      ],
+      answerIndex: 1,
+      explanation:
+        '배열은 연속 요소 = 같은 페이지에 속할 확률이 높음 → spatial locality 가 TLB hit 에 기여.',
+    },
+    {
+      id: 'ch13-mc-5',
+      type: 'multiple-choice',
+      prompt:
+        '다음 중 TLB 를 flush 해야 하는 상황이 아닌 것은?',
+      options: [
+        { text: 'ASID 지원이 없는 CPU 에서 context switch 할 때' },
+        { text: '페이지 테이블 엔트리의 매핑을 unmap 한 뒤 같은 VPN 을 새 PFN 으로 재매핑할 때' },
+        { text: 'CR3(페이지 테이블 베이스) 레지스터를 바꿀 때 (ASID 없음)' },
+        { text: '읽기 전용인 프로그램이 단순히 배열을 순회할 때' },
+      ],
+      answerIndex: 3,
+      explanation: '읽기 접근 자체는 flush 를 유발하지 않는다.',
+    },
+
+    // ── 추가 : 코드 빈칸 ──────────────────
+    {
+      id: 'ch13-code-3',
+      type: 'code-blank',
+      language: 'c',
+      prompt:
+        'x86 의 TLB invalidate. 특정 VPN 한 줄만 무효화한다.',
+      segments: [
+        { kind: 'text', text: '// 리눅스 / x86\nstatic inline void flush_tlb_one(void *va) {\n    asm volatile("' },
+        { kind: 'blank', answers: ['invlpg', 'INVLPG'], width: 8 },
+        { kind: 'text', text: ' (%0)" :: "r"(va) : "memory");\n}\n' },
+      ],
+      explanation: 'x86 의 INVLPG 명령어. 전체 flush 는 CR3 reload 로 대체한다.',
+    },
+
+    // ── 추가 : True / False ───────────────
+    {
+      id: 'ch13-tf-5',
+      type: 'true-false',
+      prompt:
+        'TLB 는 MMU 외부, 즉 L1 / L2 캐시 옆에 위치한다.',
+      answer: false,
+      explanation: 'TLB 는 MMU 내부에 있는 전용 캐시다.',
+    },
+    {
+      id: 'ch13-tf-6',
+      type: 'true-false',
+      prompt:
+        'ASID 를 쓰더라도 kernel 전역 매핑처럼 "모든 프로세스에서 공통" 인 매핑은 별도로 global 플래그로 표시해 flush 때 남겨 둘 수 있다.',
+      answer: true,
+      explanation: 'x86 의 PTE global bit 가 대표적 예.',
+    },
+    {
+      id: 'ch13-tf-7',
+      type: 'true-false',
+      prompt:
+        'TLB miss rate 가 같다면, 한 miss 당 시간 비용은 HW-managed 보다 SW-managed 가 작다.',
+      answer: false,
+      explanation: 'SW-managed 는 trap/OS 진입이 필요해 일반적으로 더 비싸다.',
+    },
+    {
+      id: 'ch13-tf-8',
+      type: 'true-false',
+      prompt:
+        '큰 페이지(huge page) 를 쓰면 같은 데이터 범위에 대해 필요한 TLB 엔트리 수가 줄어들어 hit rate 가 개선되는 경향이 있다.',
+      answer: true,
+    },
+
+    // ── 추가 : 단답 ───────────────────────
+    {
+      id: 'ch13-short-3',
+      type: 'short-answer',
+      prompt:
+        '페이지 크기 4KB, 배열 크기 64KB, 순차 접근. 배열을 처음부터 끝까지 한 번 훑을 때 TLB miss 는 최대 몇 번 발생할 수 있는가? (숫자만, cold start 기준)',
+      answers: ['16'],
+      hint: '배열이 걸치는 페이지 수',
+      explanation: '64KB / 4KB = 16 페이지. 처음 만나는 페이지마다 1 miss → 최대 16.',
+    },
+    {
+      id: 'ch13-short-4',
+      type: 'short-answer',
+      prompt:
+        'TLB entry 가 64 개, 각 entry 가 4KB 페이지를 커버한다면 TLB 의 총 reach 는? (숫자만, 단위 KB)',
+      answers: ['256', '256KB', '256 KB'],
+      hint: '64 × 4',
+      explanation: '64 × 4KB = 256KB.',
+    },
+
+    // ── 추가 : 서술형 ─────────────────────
+    {
+      id: 'ch13-essay-3',
+      type: 'essay',
+      prompt:
+        '프로그램의 메모리 접근 패턴에 따라 TLB hit rate 가 어떻게 달라지는지, "배열 순회" vs "연결 리스트 순회" 를 비교해 설명하시오.',
+      modelAnswer:
+        '배열 순회:\n- 원소가 물리적으로 연속되어 있으므로 한 페이지 안에 여러 원소가 들어 있다. 한 번의 번역(= 한 TLB 엔트리) 이 같은 페이지의 수많은 원소 접근을 커버한다.\n- 따라서 spatial locality 가 높고 TLB hit rate 가 매우 높다. cold start 에서만 페이지 수만큼의 miss 가 나고, 이후는 대부분 hit.\n\n연결 리스트 순회:\n- 노드들이 malloc 으로 흩어진 위치에 할당되면 포인터 체이스마다 서로 다른 페이지를 건드릴 가능성이 높다.\n- 페이지 단위의 spatial locality 가 약해, 노드마다 새 TLB 엔트리가 필요할 수 있다. 전체 노드 수가 많을수록 TLB miss 가 비례해서 늘어나 번역 오버헤드가 실질 성능을 지배할 수 있다.\n- 특히 TLB reach(64 entry × 4KB = 256KB) 를 넘어가는 워킹셋을 가지면 계속 thrashing 이 일어난다.\n\n정리: 같은 "N 개 원소 순회" 라도 자료구조의 메모리 배치에 따라 TLB 관점의 비용이 크게 달라진다. 고성능이 필요하면 data structure 를 cache/TLB 친화적으로 설계(arena allocator, packed array 등)하는 것이 효과적.',
+      rubric: [
+        '배열의 spatial locality 이점',
+        '연결 리스트의 TLB miss 원인',
+        'TLB reach 개념(선택)',
+      ],
+    },
   ],
 };
 

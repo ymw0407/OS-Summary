@@ -162,6 +162,127 @@ const quiz: QuizSet = {
         '실전 관점의 코멘트',
       ],
     },
+
+    // ── 추가 : 객관식 ─────────────────────
+    {
+      id: 'ch11-mc-4',
+      type: 'multiple-choice',
+      prompt:
+        '다음 중 "Buddy system" 의 특징이 아닌 것은?',
+      options: [
+        { text: '모든 블록 크기는 2 의 거듭제곱.' },
+        { text: '짝(buddy) 주소는 현재 블록의 주소에 해당 크기 비트만 XOR 해서 구할 수 있다.' },
+        { text: 'External fragmentation 이 거의 없지만 internal fragmentation 이 생길 수 있다.' },
+        { text: 'free 시 같은 크기의 이웃(buddy) 이 free 여도 합치지 않는다.' },
+      ],
+      answerIndex: 3,
+      explanation:
+        'Buddy 의 핵심은 짝이 free 일 때 즉시 coalescing 해 큰 블록을 복원하는 것.',
+    },
+    {
+      id: 'ch11-mc-5',
+      type: 'multiple-choice',
+      prompt:
+        'free list 기반 할당자에서 "double free" 가 위험한 가장 큰 이유는?',
+      options: [
+        { text: '동일 포인터를 두 번 반환하면 프로세스가 OOM 된다.' },
+        { text: '같은 chunk 가 free list 에 두 번 들어가 이후 malloc 이 같은 주소를 두 사용자에게 줄 수 있다.' },
+        { text: '커널이 자동으로 회수해 free list 가 비어 버린다.' },
+        { text: 'heap 이 축소된다.' },
+      ],
+      answerIndex: 1,
+      explanation:
+        '두 번 free 한 chunk 가 리스트에 두 번 올라가면 두 malloc 호출이 같은 블록을 쓰게 된다 — 데이터 corruption.',
+    },
+
+    // ── 추가 : 코드 빈칸 ──────────────────
+    {
+      id: 'ch11-code-3',
+      type: 'code-blank',
+      language: 'c',
+      prompt:
+        '헤더 기반 malloc/free 의 대응. free 에서 헤더로 크기를 복원.',
+      segments: [
+        { kind: 'text', text: 'typedef struct { size_t size; int magic; } hdr_t;\n\nvoid *my_malloc(size_t n) {\n    hdr_t *h = find_fit(n + sizeof(hdr_t));\n    h->size = n;\n    h->magic = 0xDEAD;\n    return (void *)(h + 1);\n}\n\nvoid my_free(void *p) {\n    hdr_t *h = (hdr_t *)p - ' },
+        { kind: 'blank', answers: ['1'], width: 4 },
+        { kind: 'text', text: ';\n    assert(h->magic == 0xDEAD);\n    push_to_free_list(h, h->' },
+        { kind: 'blank', answers: ['size'], width: 6 },
+        { kind: 'text', text: ' + sizeof(hdr_t));\n}\n' },
+      ],
+      explanation:
+        '헤더는 포인터 바로 앞 1 칸. magic 으로 double-free / overflow 검증, size 로 리스트 복귀.',
+    },
+
+    // ── 추가 : True / False ──────────────
+    {
+      id: 'ch11-tf-5',
+      type: 'true-false',
+      prompt:
+        'best-fit 은 언제나 first-fit 보다 단편화 측면에서 우월하다.',
+      answer: false,
+      explanation:
+        'best-fit 은 남는 자투리가 작아져 오히려 사용 불가한 조각이 늘어날 수도 있다.',
+    },
+    {
+      id: 'ch11-tf-6',
+      type: 'true-false',
+      prompt:
+        'Coalescing 을 하려면 free 된 chunk 의 물리적 이웃(보통 주소 기준 앞/뒤) 이 free 인지 확인할 수 있어야 하므로, free list 를 주소 순으로 유지하거나 경계에 메타데이터를 두는 방식이 필요하다.',
+      answer: true,
+    },
+    {
+      id: 'ch11-tf-7',
+      type: 'true-false',
+      prompt:
+        'Segregated list 방식은 각 size class 마다 전용 free list 를 유지하므로, class 간 메모리 이동이 항상 자유롭다.',
+      answer: false,
+      explanation:
+        'class 사이 이동은 특수 정책(예: slab 의 reclaim) 에서만 일어난다. 일반적으로는 자유롭지 않다.',
+    },
+    {
+      id: 'ch11-tf-8',
+      type: 'true-false',
+      prompt:
+        'Buddy system 에서 블록을 반환할 때, buddy 가 free 상태여도 조건에 따라 합치지 않을 수 있다 — 예컨대 상위 레벨에서 곧 사용될 가능성이 높을 때.',
+      answer: true,
+      explanation:
+        '실제 구현(e.g., Linux) 은 lazy coalescing / watermark 등을 활용한다.',
+    },
+
+    // ── 추가 : 단답 ──────────────────────
+    {
+      id: 'ch11-short-3',
+      type: 'short-answer',
+      prompt:
+        '주소 공간 안에서 heap 의 상단을 가리키는 경계를 가리키는 전통적 용어는? (영문 한 단어)',
+      answers: ['break', 'brk', 'program break'],
+      hint: 'sbrk 의 "b"',
+      explanation: 'Program break — sbrk/brk 시스템콜이 이 지점을 조작한다.',
+    },
+    {
+      id: 'ch11-short-4',
+      type: 'short-answer',
+      prompt:
+        'Buddy system 최소 블록이 16 B, 상위까지 2^10 B 로 관리한다. 총 레벨 수는? (숫자만)',
+      answers: ['7'],
+      hint: '2^4 ~ 2^10',
+      explanation: '16B = 2^4, 최대 2^10 → 차수 4..10 → 7 개.',
+    },
+
+    // ── 추가 : 서술형 ─────────────────────
+    {
+      id: 'ch11-essay-3',
+      type: 'essay',
+      prompt:
+        'Segregated list 와 Buddy system 의 공통점과 차이점을, 처리 성능 · 단편화 · 구현 복잡도 관점에서 비교하시오.',
+      modelAnswer:
+        '공통점:\n- "자주 쓰이는 크기" 별로 미리 구획을 나눠 두어, 일반 free list 탐색 오버헤드를 크게 줄인다.\n- OS 커널 / 런타임 / allocator 에서 많이 쓰이는 실전 기법.\n\n차이점:\n- 크기 체계: Segregated list 는 size class(예: 32, 64, 128, ...)를 자유롭게 정의. Buddy 는 반드시 2 의 거듭제곱 단위.\n- 단편화: Segregated 는 같은 class 내부만 free list 로 관리하므로 class 내부 낭비가 있을 수 있으나 class 간 단편화는 작다. Buddy 는 요청 크기가 임의면 최대 2배까지 internal fragmentation.\n- 병합(coalescing): Buddy 는 buddy 주소만으로 연쇄 병합이 자연스럽다. Segregated 는 별도 메타데이터 없이 병합하기 까다롭다.\n- 구현 복잡도: Segregated 는 리스트 배열로 간단하나 class 선정 정책을 튜닝해야 한다. Buddy 는 트리·비트맵 기반 회계가 필요해 구현이 더 복잡하지만 coalescing 규칙이 깔끔하다.\n\n실전에서 Linux 의 페이지 서브시스템은 Buddy 를 사용하고, 그 위에서 slab/slub 이 크기별 segregated list 역할을 한다 — 두 아이디어가 계층적으로 함께 쓰이는 구조다.',
+      rubric: [
+        '공통점(빠른 할당)',
+        '크기 체계·단편화·병합의 차이 중 최소 둘',
+        '실전에서 계층적으로 결합된다는 점',
+      ],
+    },
   ],
 };
 

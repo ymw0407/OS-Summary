@@ -166,6 +166,125 @@ const quiz: QuizSet = {
         'Multi-Level 에서 상위 PDE 로 "영역 전체 없음" 표현',
       ],
     },
+
+    // ── 추가 : 객관식 ─────────────────────
+    {
+      id: 'ch14-mc-4',
+      type: 'multiple-choice',
+      prompt:
+        '32-bit VA · 4KB 페이지 · 4B PTE 시스템에서 2 단계 page table 을 쓴다. 한 page table page 에 들어가는 PTE 수는 1024(10비트) 이고 page directory 도 같은 크기라 가정하면, PDI / PTI / offset 의 비트 수 배분은?',
+      options: [
+        { text: '10 / 10 / 12' },
+        { text: '12 / 10 / 10' },
+        { text: '8 / 12 / 12' },
+        { text: '10 / 12 / 10' },
+      ],
+      answerIndex: 0,
+      explanation: '32 = 10(PDI) + 10(PTI) + 12(offset).',
+    },
+    {
+      id: 'ch14-mc-5',
+      type: 'multiple-choice',
+      prompt:
+        'Inverted page table 이 일반적으로 함께 쓰는 자료구조는?',
+      options: [
+        { text: '해시 테이블 (hash table)' },
+        { text: '힙 (binary heap)' },
+        { text: '그래프 (graph)' },
+        { text: '큐 (queue)' },
+      ],
+      answerIndex: 0,
+      explanation: 'VPN→PFN 역방향 조회를 해시로 가속한다.',
+    },
+
+    // ── 추가 : 코드 빈칸 ──────────────────
+    {
+      id: 'ch14-code-3',
+      type: 'code-blank',
+      language: 'c',
+      prompt:
+        '2 단계 page table 에서 PDE 가 invalid 인 경우 "하위 page table page 는 존재하지 않는다" 로 취급해 공간 절약. 빈칸을 채우시오.',
+      segments: [
+        { kind: 'text', text: 'pde_t pde = pd[pdi];\nif (!pde.' },
+        { kind: 'blank', answers: ['valid'], width: 6 },
+        { kind: 'text', text: ') {\n    // 이 영역 전체(2^PTI × pageSize) 를 매핑 없음으로 처리\n    raise_fault();\n} else {\n    pte_t *pt_page = (pte_t *)(pde.pfn << SHIFT);\n    pte_t pte = pt_page[pti];\n    if (!pte.valid) raise_fault();\n    return (pte.pfn << SHIFT) | offset;\n}\n' },
+      ],
+      explanation:
+        'invalid PDE 한 칸이 2^PTI 개의 PTE 공간을 동시에 표현 — sparse 주소 공간 절약의 핵심.',
+    },
+
+    // ── 추가 : True / False ───────────────
+    {
+      id: 'ch14-tf-5',
+      type: 'true-false',
+      prompt:
+        '멀티 레벨 page table 의 상위 테이블(Page Directory) 은 그 자체가 한 page 에 들어가야만 한다.',
+      answer: false,
+      explanation:
+        '상위 테이블이 한 페이지를 넘으면 더 깊은 레벨(3 단계, 4 단계) 로 쪼갠다.',
+    },
+    {
+      id: 'ch14-tf-6',
+      type: 'true-false',
+      prompt:
+        'Hybrid 방식은 세그먼트 사이의 큰 hole 을 "해당 세그먼트 size 를 0 으로 설정" 하는 식으로 아예 page table 엔트리를 갖지 않게 할 수 있다.',
+      answer: true,
+    },
+    {
+      id: 'ch14-tf-7',
+      type: 'true-false',
+      prompt:
+        '4 단계 page table 환경에서 TLB miss 가 한 번 발생하면 최악의 경우 data 접근 포함 5 번의 메모리 접근이 필요하다.',
+      answer: true,
+      explanation: 'PGD + P4D + PUD + PMD + PTE + data → 5 회 (상위 4 단계 + 데이터, 일부 시스템은 P4D 생략 시 4 회).',
+    },
+    {
+      id: 'ch14-tf-8',
+      type: 'true-false',
+      prompt:
+        'Inverted page table 은 각 프로세스마다 개별적으로 존재한다.',
+      answer: false,
+      explanation: '전체 시스템에 하나만 존재(물리 프레임 수에 비례).',
+    },
+
+    // ── 추가 : 단답 ───────────────────────
+    {
+      id: 'ch14-short-3',
+      type: 'short-answer',
+      prompt:
+        '30-bit VA, 512B 페이지 인 시스템이라면 VPN 비트 수는? (숫자만)',
+      answers: ['21'],
+      hint: '30 − log2(512)',
+      explanation: '30 − 9 = 21 비트.',
+    },
+    {
+      id: 'ch14-short-4',
+      type: 'short-answer',
+      prompt:
+        '리눅스 x86_64 에서 4 단계 page table 을 가리키는 5 레벨 약어를 상위부터 4 개만 쉼표로 나열하시오. (P4D 는 5 단계 확장, 기본 4 단계 기준)',
+      answers: [
+        'PGD, PUD, PMD, PTE',
+        'pgd, pud, pmd, pte',
+        'PGD,PUD,PMD,PTE',
+      ],
+      hint: 'PGD 부터 시작',
+      explanation: 'PGD → PUD → PMD → PTE.',
+    },
+
+    // ── 추가 : 서술형 ─────────────────────
+    {
+      id: 'ch14-essay-3',
+      type: 'essay',
+      prompt:
+        '64-bit 주소 공간에서 왜 3 ~ 4 단계의 깊은 페이지 테이블을 사용하는지, 그리고 이 깊이가 실제 성능을 크게 해치지 않는 이유를 설명하시오.',
+      modelAnswer:
+        '64-bit 주소공간은 이론상 2^64 이고, 현대 x86_64 는 canonical 48 비트를 쓴다고 해도 2^48 ≈ 256 TB 라는 매우 큰 공간이다. 4KB 페이지·8B PTE 라면 단일 선형 page table 이 2^36 × 8B = 512 GB 가 되어 전혀 실용적이지 않다. Hybrid 로도 여전히 세그먼트 내부 선형이라 한계가 있다.\n\n해결책으로 page table 자체를 page 단위로 쪼개고, 다시 그것을 가리키는 상위 테이블을 또 쪼개는 식으로 계층을 여러 번 둔다. 리눅스 x86_64 에서 PGD → PUD → PMD → PTE 의 4 단계(혹은 5 단계 P4D 포함) 가 쓰인다. 각 단계의 테이블은 한 페이지 안에 들어가는 작은 구조이므로, 실제로 사용하는 영역에 해당하는 상위 엔트리만 하위 테이블을 가지고 나머지는 invalid 로 남겨 전체 공간 소비를 실제 사용 영역 크기에 비례하도록 만든다.\n\n단계 수가 늘면 TLB miss 때 메모리 접근이 늘어나지만, 일반 워크로드의 TLB hit rate 는 매우 높기 때문에 실효 비용은 작다. 또 hardware page walker 가 각 단계의 접근을 파이프라인·캐시를 활용해 빠르게 수행한다. 필요하면 huge page (2MB, 1GB) 를 써서 단계 수를 줄이고 TLB reach 를 늘리는 최적화도 가능하다.',
+      rubric: [
+        '64-bit 주소 공간 크기와 선형 테이블 불가능성',
+        '계층화로 sparse 공간에 비례한 공간 사용',
+        'TLB hit rate, huge page 등 실성능 완화 요인',
+      ],
+    },
   ],
 };
 

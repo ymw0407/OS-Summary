@@ -163,6 +163,130 @@ const quiz: QuizSet = {
         'vruntime 가중치 공식과 선택 규칙',
       ],
     },
+
+    // ── 추가 : 객관식 (혼동 포인트) ─────────────────────
+    {
+      id: 'ch06-mc-4',
+      type: 'multiple-choice',
+      prompt:
+        'CFS 에서 nice 값이 "낮을수록" 우선순위가 높은 이유로 옳은 것은?',
+      options: [
+        { text: 'nice 가 낮으면 weight 가 작아서 CPU 를 덜 쓴다.' },
+        { text: 'nice 가 낮으면 weight 가 커서 vruntime 이 천천히 증가해 자주 선택된다.' },
+        { text: 'nice 가 음수면 스케줄러가 항상 먼저 실행한다(절대 우선).' },
+        { text: 'nice 값은 vruntime 과 무관하다.' },
+      ],
+      answerIndex: 1,
+      explanation:
+        'nice ↓ → weight ↑ → 같은 실제 실행시간에 vruntime 증가가 weight_0/weight_i 로 작아 → 덜 받은 쪽으로 판정되어 더 자주 선택.',
+    },
+    {
+      id: 'ch06-mc-5',
+      type: 'multiple-choice',
+      prompt:
+        'Lottery 와 Stride 의 차이로 옳은 것은?',
+      options: [
+        { text: 'Lottery 는 결정적 · Stride 는 확률적' },
+        { text: 'Lottery 는 확률적 · Stride 는 결정적' },
+        { text: '둘 다 결정적이다.' },
+        { text: '둘 다 확률적이다.' },
+      ],
+      answerIndex: 1,
+      explanation:
+        'Lottery = 매 결정마다 난수로 선택(확률적). Stride = pass 최소값을 정확히 선택(결정적).',
+    },
+
+    // ── 추가 : 코드 빈칸 ─────────────────────────────
+    {
+      id: 'ch06-code-3',
+      type: 'code-blank',
+      language: 'c',
+      prompt:
+        'CFS 의 vruntime 누적. 실제 실행 시간 delta 에 weight 보정을 적용.',
+      segments: [
+        { kind: 'text', text: '// weight_0 은 nice 0 의 기본 weight (보통 1024)\nvoid account_runtime(proc_t *p, uint64_t delta) {\n    p->vruntime += delta * ' },
+        { kind: 'blank', answers: ['WEIGHT_0 / p->weight', 'weight_0 / p->weight', '1024 / p->weight'], width: 22 },
+        { kind: 'text', text: ';\n}\n' },
+      ],
+      explanation:
+        'weight 큰 프로세스일수록 보정 계수가 작아 vruntime 이 느리게 증가.',
+    },
+
+    // ── 추가 : True / False ───────────────────────
+    {
+      id: 'ch06-tf-5',
+      type: 'true-false',
+      prompt:
+        'Ticket Transfer 를 사용하면 클라이언트가 서버에게 자신의 티켓을 일시적으로 넘겨, 서버가 자신의 요청을 더 빨리 처리하도록 유도할 수 있다.',
+      answer: true,
+    },
+    {
+      id: 'ch06-tf-6',
+      type: 'true-false',
+      prompt:
+        '티켓 수가 동일한 두 프로세스가 있을 때, Stride scheduling 은 완전히 교대로 실행하는 것을 보장한다.',
+      answer: true,
+      explanation:
+        'stride 가 같으므로 pass 도 동일하게 증가 → tie-break 정책에 따라 교대로 선택.',
+    },
+    {
+      id: 'ch06-tf-7',
+      type: 'true-false',
+      prompt:
+        'CFS 에서 ready 프로세스 수가 많아져 기본 time slice 가 min_granularity 아래로 내려가려 하면, 실제 time slice 는 min_granularity 로 고정되어 "공평한 한 바퀴" 주기 자체가 sched_latency 를 초과하게 된다.',
+      answer: true,
+      explanation:
+        'context switch 비용 방지 위해 공평성 주기를 조금 희생.',
+    },
+    {
+      id: 'ch06-tf-8',
+      type: 'true-false',
+      prompt:
+        'RB-Tree 의 삽입/삭제/최솟값 조회가 모두 O(log n) 이므로, CFS 는 ready 프로세스가 많아도 스케줄 결정 오버헤드가 이론적으로 제한된다.',
+      answer: true,
+    },
+
+    // ── 추가 : 단답 ───────────────────────────────
+    {
+      id: 'ch06-short-3',
+      type: 'short-answer',
+      prompt:
+        'CFS 가 "깨어난 프로세스의 vruntime 을 트리의 최소값보다 너무 작지 않도록 끌어올리는" 목적은? (한 줄)',
+      answers: [
+        '오래 잠든 보너스가 불공정한 CPU 독점이 되는 것을 막기 위해',
+        '깨어난 프로세스가 CPU 를 독점하지 못하게 하기 위해',
+        'CPU 독점 방지',
+        'starvation 방지',
+        '공정성 유지',
+      ],
+      hint: '"독점 방지" 느낌',
+      explanation:
+        '잠들었던 동안 vruntime 이 0 에 가까우면 한동안 혼자 CPU 를 독차지할 위험이 있으므로 최소값 근처로 보정.',
+    },
+    {
+      id: 'ch06-short-4',
+      type: 'short-answer',
+      prompt:
+        'Stride 스케줄러에서 BIG = 10000, 프로세스 A 의 tickets = 100, B 의 tickets = 50 이라면 각각의 stride 는? (공백 구분 두 숫자, A 먼저)',
+      answers: ['100 200', '100, 200', '100,200'],
+      hint: 'A 와 B 의 stride 순서대로',
+      explanation: 'A: 10000/100 = 100. B: 10000/50 = 200.',
+    },
+
+    // ── 추가 : 서술형 ─────────────────────────────
+    {
+      id: 'ch06-essay-3',
+      type: 'essay',
+      prompt:
+        'CFS 가 sleep → wake 한 프로세스의 vruntime 을 보정하는 이유와 구체적 방법을, 보정하지 않았을 때의 문제와 함께 서술하시오.',
+      modelAnswer:
+        '보정하지 않을 때의 문제: 어떤 프로세스가 오랜 시간 잠들어 있다가(예: 블록 I/O 대기) 깨어나면, 실행되지 않은 동안 vruntime 이 거의 증가하지 않았으므로 RB-tree 의 최솟값과 크게 차이가 난다. CFS 는 "가장 작은 vruntime 을 선택" 하므로, 깨어난 프로세스가 그 차이만큼의 시간 동안 혼자 CPU 를 독점하게 되어 다른 프로세스들의 응답성이 크게 나빠진다.\n\n보정 방법: 프로세스가 ready 상태로 돌아올 때, 해당 프로세스의 vruntime 을 "현재 트리의 최소 vruntime 에서 일정량(예: sched_latency / 2) 을 뺀 값" 이상으로 끌어올린다. 즉 깨어남 보너스는 주되 "지나치게 많이 밀린 것처럼" 보이지는 않게 한다. 이렇게 하면 interactive 한 작업이 sleep 에서 깨어나면 곧바로 실행될 가능성은 높으면서도(반응성), 장기 공정성(비율) 이 크게 훼손되지 않는다.',
+      rubric: [
+        '보정하지 않으면 생기는 독점 문제',
+        '최소 vruntime 기준으로 끌어올린다는 방법',
+        '반응성과 공정성의 균형 의식',
+      ],
+    },
   ],
 };
 

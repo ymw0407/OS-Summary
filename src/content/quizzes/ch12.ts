@@ -165,6 +165,125 @@ const quiz: QuizSet = {
         '교체 정책 / swap 과의 연결(Accessed, Dirty)',
       ],
     },
+
+    // ── 추가 : 객관식 (혼동 포인트) ─────────────────
+    {
+      id: 'ch12-mc-4',
+      type: 'multiple-choice',
+      prompt:
+        '다음 중 옳지 않은 설명은?',
+      options: [
+        { text: '페이지 크기를 키우면 page table 엔트리 수는 줄어든다.' },
+        { text: '페이지 크기를 키우면 offset 비트 수가 증가한다.' },
+        { text: '페이지 크기를 키우면 internal fragmentation 도 커질 수 있다.' },
+        { text: '페이지 크기를 키우면 external fragmentation 이 같이 늘어난다.' },
+      ],
+      answerIndex: 3,
+      explanation: 'Paging 은 고정 크기이므로 external fragmentation 은 원칙적으로 없다.',
+    },
+    {
+      id: 'ch12-mc-5',
+      type: 'multiple-choice',
+      prompt:
+        '선형 page table 의 각 엔트리가 8B 로 늘어난다면, 32-bit 주소공간·4KB 페이지 환경에서 프로세스당 page table 크기는 얼마가 되는가?',
+      options: [
+        { text: '4 MB' },
+        { text: '8 MB' },
+        { text: '16 MB' },
+        { text: '2 MB' },
+      ],
+      answerIndex: 1,
+      explanation: '2^20 × 8B = 8 MB.',
+    },
+
+    // ── 추가 : 코드 빈칸 ──────────────────
+    {
+      id: 'ch12-code-3',
+      type: 'code-blank',
+      language: 'c',
+      prompt:
+        '선형 page table 에서 주소를 번역한다. 오류 시 fault.',
+      segments: [
+        { kind: 'text', text: 'uint32_t translate(uint32_t va) {\n    uint32_t vpn    = va >> SHIFT;\n    uint32_t offset = va & OFFSET_MASK;\n\n    pte_t pte = page_table[vpn];\n    if (!pte.' },
+        { kind: 'blank', answers: ['valid'], width: 6 },
+        { kind: 'text', text: ') raise_fault();\n    if (!pte.' },
+        { kind: 'blank', answers: ['present'], width: 8 },
+        { kind: 'text', text: ') handle_page_fault(vpn);\n\n    return (pte.pfn << SHIFT) | offset;\n}\n' },
+      ],
+      explanation:
+        'valid 는 "매핑 존재 여부", present 는 "현재 메모리에 존재 여부(아니면 swap in 필요)".',
+    },
+
+    // ── 추가 : True / False ─────────────
+    {
+      id: 'ch12-tf-5',
+      type: 'true-false',
+      prompt:
+        'Paging 을 도입하면 프로세스의 heap 과 stack 이 물리 메모리에서 반드시 연속으로 놓여야 한다.',
+      answer: false,
+      explanation: '물리 frame 단위로 흩어져 놓일 수 있는 것이 paging 의 장점.',
+    },
+    {
+      id: 'ch12-tf-6',
+      type: 'true-false',
+      prompt:
+        'Paging 자체가 page table 을 어디에 저장해야 하는지 문제를 해결해 주지는 않는다 — page table 은 별도로 메모리 어딘가에 배치해야 한다.',
+      answer: true,
+    },
+    {
+      id: 'ch12-tf-7',
+      type: 'true-false',
+      prompt:
+        'PTE 의 dirty bit 가 0 인 clean 페이지는, swap out 될 때 디스크에 다시 쓸 필요가 없다(이미 백업이 있다면).',
+      answer: true,
+    },
+    {
+      id: 'ch12-tf-8',
+      type: 'true-false',
+      prompt:
+        '페이지 크기 4KB 에서 offset 은 정확히 12 비트이다.',
+      answer: true,
+      explanation: 'log2(4096) = 12.',
+    },
+
+    // ── 추가 : 단답 ────────────────────
+    {
+      id: 'ch12-short-3',
+      type: 'short-answer',
+      prompt:
+        'VPN 이 5 비트, offset 이 7 비트인 시스템의 페이지 크기는 몇 바이트인가? (숫자만)',
+      answers: ['128', '128B', '128 bytes'],
+      explanation: '2^7 = 128.',
+    },
+    {
+      id: 'ch12-short-4',
+      type: 'short-answer',
+      prompt:
+        'Paging 을 도입한 뒤에도 남아 있는 대표적인 성능 문제 두 가지를 쉼표로 구분해 쓰시오.',
+      answers: [
+        '번역 오버헤드, page table 크기',
+        '번역 오버헤드, 페이지 테이블 크기',
+        'translation overhead, page table size',
+        '번역 오버헤드,page table 크기',
+      ],
+      hint: '시간 문제와 공간 문제',
+      explanation: '시간(번역 오버헤드) → TLB 로 해결, 공간(page table 크기) → Multi-Level 로 해결.',
+    },
+
+    // ── 추가 : 서술형 ───────────────────
+    {
+      id: 'ch12-essay-3',
+      type: 'essay',
+      prompt:
+        'Paging 을 도입한 직후의 시스템에서는 왜 프로그램 실행 속도가 원래보다 느려지는지, 그리고 후속 해결책이 무엇인지 설명하시오.',
+      modelAnswer:
+        'Paging 은 매 메모리 접근마다 다음 두 단계를 거쳐야 한다.\n1) VPN 으로 page table 인덱스를 계산해 PTE 를 읽는다 (메모리 접근 1 회).\n2) PTE 의 PFN 과 offset 을 결합한 물리 주소로 실제 데이터를 읽는다 (메모리 접근 1 회).\n\n즉 논리적으로는 "메모리 접근 1 회" 였던 것이 "메모리 접근 2 회" 로 늘어나 실행 속도가 2 배에 가깝게 느려질 수 있다. 특히 캐시 miss 가 많은 상황에서는 체감 저하가 더 크다.\n\n해결책:\n- TLB: 최근 번역 결과를 MMU 내부의 작은 캐시에 보관해, 같은 VPN 이 다시 접근되면 page table 을 건드리지 않고 바로 PFN 을 얻는다. locality 가 있는 일반 워크로드에서는 hit rate 가 높아 번역 오버헤드가 거의 사라진다.\n- Multi-Level Page Table: 공간 문제를 풀되, TLB miss 시 접근 횟수가 단계 수만큼 늘어나는 시간 비용을 다시 도입한다. 역시 TLB 에 의존.\n\n결국 paging + TLB + multi-level 이 함께 쓰여, 공간과 시간 모두를 실용적인 범위로 관리한다.',
+      rubric: [
+        '번역 오버헤드의 정량적 원인',
+        'TLB 의 역할',
+        '공간 문제(테이블 크기) 의 존재를 언급',
+      ],
+    },
   ],
 };
 

@@ -180,6 +180,128 @@ const quiz: QuizSet = {
         'return-from-trap 으로 새 프로세스 진입',
       ],
     },
+
+    // ── 추가 : 객관식 (혼동 포인트) ─────────────────────
+    {
+      id: 'ch03-mc-4',
+      type: 'multiple-choice',
+      prompt:
+        'Trap / Interrupt / Exception 의 발생 원인에 대한 짝이 올바른 것은?',
+      options: [
+        { text: 'Trap : 외부 하드웨어 / Interrupt : 소프트웨어 / Exception : 0 으로 나누기' },
+        { text: 'Trap : 소프트웨어 시스템콜 / Interrupt : 외부 하드웨어 / Exception : 0 으로 나누기 같은 잘못된 연산' },
+        { text: 'Trap : 0 으로 나누기 / Interrupt : 시스템콜 / Exception : 타이머' },
+        { text: '셋 다 동일한 원인(시스템콜) 에서 발생한다.' },
+      ],
+      answerIndex: 1,
+      explanation:
+        'Trap 은 software trap(시스템콜), Interrupt 는 외부 하드웨어, Exception 은 잘못된 연산/접근. 셋 다 kernel 진입점이지만 트리거가 다르다.',
+    },
+    {
+      id: 'ch03-mc-5',
+      type: 'multiple-choice',
+      prompt:
+        '다음 중 반드시 Cooperative 스케줄링 방식의 단점에 해당하지 않는 것은?',
+      options: [
+        { text: '프로세스가 무한루프에 빠지면 OS 가 제어권을 되찾지 못한다.' },
+        { text: '프로세스가 일부러 system call 이나 yield 를 부르지 않으면 다른 프로세스에 CPU 가 가지 않는다.' },
+        { text: '매 타이머 인터럽트마다 context switch 가 일어나 오버헤드가 크다.' },
+        { text: '버그 있는 프로그램이 시스템 전체의 응답성을 망가뜨릴 수 있다.' },
+      ],
+      answerIndex: 2,
+      explanation:
+        '타이머 인터럽트는 non-cooperative 방식의 핵심 도구다. cooperative 에는 해당하지 않는 설명.',
+    },
+
+    // ── 추가 : 코드 빈칸 ─────────────────────────────
+    {
+      id: 'ch03-code-3',
+      type: 'code-blank',
+      language: 'c',
+      prompt:
+        '타이머 인터럽트 핸들러의 뼈대. 빈칸을 채우시오.',
+      segments: [
+        { kind: 'text', text: 'void timer_interrupt(void) {\n    // 1) 커널 스택에 user 레지스터 저장\n    save_regs();\n    // 2) 현재 프로세스 PCB 에 context 저장\n    save_ctx(current);\n    // 3) 스케줄러 호출\n    proc_t *next = ' },
+        { kind: 'blank', answers: ['schedule()', 'scheduler()', 'pick_next()'], width: 14 },
+        { kind: 'text', text: ';\n    // 4) 새 프로세스 context 복원\n    restore_ctx(next);\n    current = next;\n    // 5) 유저 모드로 복귀\n    ' },
+        { kind: 'blank', answers: ['return-from-trap', 'iret', 'return_from_trap'], width: 20 },
+        { kind: 'text', text: '();\n}\n' },
+      ],
+      explanation:
+        '저장 → 스케줄 → 복원 → return-from-trap 으로 새 프로세스의 user mode 로 복귀.',
+    },
+
+    // ── 추가 : True / False (혼동 포인트) ───────────
+    {
+      id: 'ch03-tf-5',
+      type: 'true-false',
+      prompt:
+        'System call 은 함수 호출과 동일한 메커니즘이며, 권한 모드 전환 없이도 수행된다.',
+      answer: false,
+      explanation:
+        'system call 은 trap 을 일으켜 kernel mode 로 권한을 상승시킨 뒤 동작한다. 단순 함수 호출이 아니다.',
+    },
+    {
+      id: 'ch03-tf-6',
+      type: 'true-false',
+      prompt:
+        'timer interrupt 핸들러는 user 가 설치할 수 있으며, 사용자 프로그램 안에서도 interrupt 를 끌 수 있다.',
+      answer: false,
+      explanation:
+        'interrupt 핸들러 등록 / 마스킹은 특권 명령이라 user mode 에서 불가능.',
+    },
+    {
+      id: 'ch03-tf-7',
+      type: 'true-false',
+      prompt:
+        'return-from-trap 이 실행되면 kernel mode 에서 저장해 두었던 레지스터들이 복원되고, 사용자 모드로 돌아와 멈춰 있던 지점부터 실행을 이어 간다.',
+      answer: true,
+    },
+    {
+      id: 'ch03-tf-8',
+      type: 'true-false',
+      prompt:
+        '타이머 인터럽트는 사용자 프로그램이 실행 중일 때만 발생하며, 커널 코드 실행 중에는 발생하지 않는다.',
+      answer: false,
+      explanation:
+        '타이머는 CPU 에서 주기적으로 발생하는 하드웨어 이벤트이므로 커널 코드 중에도 발생할 수 있다. 단 커널은 중요한 구간에서 interrupt 를 잠시 마스킹하기도 한다.',
+    },
+
+    // ── 추가 : 단답 ───────────────────────────────
+    {
+      id: 'ch03-short-3',
+      type: 'short-answer',
+      prompt:
+        'CPU 가 사용자 모드에서 금지된 명령을 만났을 때, 하드웨어가 자동으로 발생시키는 이벤트의 영문 이름은?',
+      answers: ['exception', 'Exception', 'EXCEPTION', 'trap'],
+      hint: 'Protection fault 와 같은 맥락',
+      explanation: 'Exception. 엄밀한 하드웨어 용어로는 "fault/trap/abort" 로 세분화됨.',
+    },
+    {
+      id: 'ch03-short-4',
+      type: 'short-answer',
+      prompt:
+        '현대 x86 리눅스에서 사용자 프로그램이 시스템콜을 호출할 때 사용하는 "빠른 시스템콜 진입" 명령어의 이름은? (x86_64 기준, 영문)',
+      answers: ['syscall', 'SYSCALL', 'sysenter', 'SYSENTER'],
+      hint: 'x86_64 의 전용 명령어',
+      explanation:
+        'x86_64 에서는 syscall 명령어가 `int 0x80` 대신 쓰인다 (빠른 진입/복귀).',
+    },
+
+    // ── 추가 : 서술형 ─────────────────────────────
+    {
+      id: 'ch03-essay-3',
+      type: 'essay',
+      prompt:
+        '트랩 메커니즘이 "성능을 거의 희생하지 않으면서" 안전한 가상화를 제공할 수 있는 이유를 Direct Execution 과 비교해 설명하시오.',
+      modelAnswer:
+        'Direct Execution 은 사용자 프로그램을 그대로 CPU 에서 실행하기 때문에 OS 의 개입이 거의 없고 매우 빠르지만, 프로그램이 원하는 무엇이든 할 수 있어 안전하지 않다.\n\nLimited Direct Execution 은 대부분의 명령을 여전히 사용자 프로세스가 CPU 에서 직접 실행하게 두되, "특권이 필요한 순간" 과 "OS 가 개입해야 하는 순간" 에만 trap 으로 커널에 들어간다.\n- 일반 산술/메모리 접근은 user mode 에서 곧바로 실행 (오버헤드 없음).\n- I/O · 프로세스 생성 · 메모리 할당 같은 특권 작업만 system call trap 으로 kernel 호출.\n- 통제를 놓치지 않으려고 timer interrupt 가 주기적으로 CPU 를 빼앗아 스케줄링.\n\n즉 trap 은 "필요한 순간에만 비용이 드는 스위치" 이기 때문에, 평균적으로는 direct execution 에 가까운 성능을 유지하면서도 안전성·공정성을 확보할 수 있다.',
+      rubric: [
+        '대부분은 사용자 모드에서 직접 실행된다는 점',
+        '특권 작업만 trap 을 통해 커널로 전달',
+        '타이머 인터럽트로 제어권 유지',
+      ],
+    },
   ],
 };
 

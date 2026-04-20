@@ -166,6 +166,126 @@ const quiz: QuizSet = {
         'heap ↔ stack 관계(마주보며 자람)',
       ],
     },
+
+    // ── 추가 : 객관식 (혼동 포인트) ─────────────────
+    {
+      id: 'ch08-mc-4',
+      type: 'multiple-choice',
+      prompt:
+        '다음 중 "주소 공간 가상화의 3 가지 목표" 로 일반적으로 꼽히는 것이 아닌 것은?',
+      options: [
+        { text: 'Transparency (프로그램이 가상화를 의식하지 않게)' },
+        { text: 'Efficiency (시간·공간 오버헤드를 크게 늘리지 않게)' },
+        { text: 'Protection (프로세스 간/커널 메모리 격리)' },
+        { text: 'Persistence (프로세스 종료 후에도 메모리 내용을 보존)' },
+      ],
+      answerIndex: 3,
+      explanation:
+        'Transparency / Efficiency / Protection 이 기본 목표. Persistence 는 파일시스템의 목표.',
+    },
+    {
+      id: 'ch08-mc-5',
+      type: 'multiple-choice',
+      prompt:
+        '다음 변수 중 일반적으로 "stack" 이 아닌 다른 영역에 놓이는 것은?',
+      options: [
+        { text: '함수 내부에서 선언한 `int x;`' },
+        { text: '함수 인자 `int argc`' },
+        { text: '함수 내부의 `static int cached = 0;`' },
+        { text: '함수 내부의 반환 주소' },
+      ],
+      answerIndex: 2,
+      explanation:
+        '`static` 지역변수는 한 번 생성되어 프로세스 수명 동안 유지되므로 bss 또는 data 에 놓인다.',
+    },
+
+    // ── 추가 : 코드 빈칸 ─────────────────────────────
+    {
+      id: 'ch08-code-3',
+      type: 'code-blank',
+      language: 'c',
+      prompt:
+        'C 표준 기준 주소 크기를 바이트로 출력. 32-bit 시스템과 64-bit 시스템 각각 결과값.',
+      segments: [
+        { kind: 'text', text: '#include <stdio.h>\nint main(void) {\n    printf("ptr bytes = %zu\\n", sizeof(void *));\n    // 32-bit x86 에서는 ' },
+        { kind: 'blank', answers: ['4'], width: 4 },
+        { kind: 'text', text: '\n    // 64-bit x86_64 에서는 ' },
+        { kind: 'blank', answers: ['8'], width: 4 },
+        { kind: 'text', text: '\n}\n' },
+      ],
+      explanation:
+        '32-bit 주소 공간: 포인터 4B. 64-bit 주소 공간: 포인터 8B. 주소 공간 크기는 2^32 vs 2^64.',
+    },
+
+    // ── 추가 : True / False ───────────────────
+    {
+      id: 'ch08-tf-5',
+      type: 'true-false',
+      prompt:
+        '같은 바이너리에서 포크된 두 프로세스가 각각 `printf("%p", &global)` 를 찍으면, 현대 OS 에서 대개 같은 "가상" 주소가 찍히지만 그 뒤의 물리 주소는 다를 수 있다.',
+      answer: true,
+      explanation:
+        '가상 주소 공간은 프로세스마다 독립. 같은 프로그램이면 컴파일된 virtual 주소가 같게 나오기 쉽다. 물리 매핑은 OS 마음대로.',
+    },
+    {
+      id: 'ch08-tf-6',
+      type: 'true-false',
+      prompt:
+        'heap 은 동적으로 자라지만, 스택과 달리 free() 를 명시적으로 호출해도 OS 가 즉시 메모리를 회수해 주는 것은 아니다.',
+      answer: true,
+      explanation:
+        'free 는 allocator 의 free list 로만 돌려주고, OS 반환(brk 축소)은 별개 판단.',
+    },
+    {
+      id: 'ch08-tf-7',
+      type: 'true-false',
+      prompt:
+        '한 프로세스가 자기 코드 세그먼트에 쓰기를 시도해 segmentation fault 가 나는 이유는, 코드 세그먼트의 페이지 속성이 read-execute 로 설정되어 있기 때문이다.',
+      answer: true,
+    },
+    {
+      id: 'ch08-tf-8',
+      type: 'true-false',
+      prompt:
+        '64-bit 시스템에서 실제로 사용 가능한 가상 주소 공간은 2^64 바이트 전부다.',
+      answer: false,
+      explanation:
+        '현대 x86_64 는 canonical 주소(보통 48 bit) 만 사용. 상위는 예약.',
+    },
+
+    // ── 추가 : 단답 ───────────────────────────
+    {
+      id: 'ch08-short-3',
+      type: 'short-answer',
+      prompt:
+        '주소 공간 안에서 stack 과 heap 사이의 큰 미사용 공간을 가리키는 용어는? (영문)',
+      answers: ['hole', 'Hole', 'free hole', 'gap'],
+      explanation: '"Hole"(또는 free 영역). heap ↔ stack 이 서로 마주보며 자라게 해 주는 여유 공간.',
+    },
+    {
+      id: 'ch08-short-4',
+      type: 'short-answer',
+      prompt:
+        '16 KB 페이지, 4 GB 가상 주소 공간에서 선형 페이지 테이블의 엔트리 수는? (숫자만)',
+      answers: ['262144', '262,144', '2^18'],
+      hint: '4GB / 16KB',
+      explanation: '4 GB / 16 KB = 2^32 / 2^14 = 2^18 = 262,144.',
+    },
+
+    // ── 추가 : 서술형 ─────────────────────────────
+    {
+      id: 'ch08-essay-3',
+      type: 'essay',
+      prompt:
+        '"주소 공간" 이라는 추상화가 커널 개발자에게 주는 이점과, 사용자 프로그래머에게 주는 이점을 나누어 설명하시오.',
+      modelAnswer:
+        '커널 개발자 관점:\n- 각 프로세스의 메모리 위치를 자유롭게 재배치할 수 있다. 물리 메모리 조각 어디든 쓸 수 있으므로 할당/회수 정책이 단순해진다.\n- 권한 비트(RW, US 등) 를 페이지 단위로 부여해 보호 정책을 세밀하게 적용할 수 있다.\n- swap, lazy allocation, copy-on-write 등 고급 메커니즘을 매핑 계층에서 투명하게 구현할 수 있다.\n\n사용자 프로그래머 관점:\n- 자기 프로그램의 "주소 0" 부터 시작하는 평평한 가상 공간을 가정하고 작성할 수 있어, 물리적 배치나 다른 프로세스의 존재를 신경 쓰지 않아도 된다.\n- 포인터, 배열, malloc 같은 기본 메모리 API 가 다른 프로세스의 간섭 없이 안정적으로 동작한다.\n- 디버거가 보여 주는 주소가 프로세스별로 일관되므로 디버깅이 쉬워진다.\n\n결국 가상 주소 공간은 "OS 가 복잡한 물리 메모리 관리를 흡수하고, 사용자에게는 깔끔한 개념 모델을 제공" 하는 추상화다.',
+      rubric: [
+        '커널 관점의 자유도/보호/고급 기능',
+        '사용자 관점의 평평하고 독립적인 모델',
+        '추상화의 일반 원리 요약',
+      ],
+    },
   ],
 };
 

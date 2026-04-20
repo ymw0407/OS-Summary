@@ -171,6 +171,127 @@ const quiz: QuizSet = {
         '관리 방안(비율 유지 / 멀티 레벨 아이디어)',
       ],
     },
+
+    // ── 추가 : 객관식 (혼동 포인트) ─────────────────────
+    {
+      id: 'ch04-mc-4',
+      type: 'multiple-choice',
+      prompt:
+        '세 작업 A(5s), B(8s), C(3s) 가 t=0 동시 도착할 때 SJF 와 FIFO 의 평균 Turnaround 차이는?',
+      options: [
+        { text: '0 초' },
+        { text: '1 초' },
+        { text: '2 초' },
+        { text: '3 초' },
+      ],
+      answerIndex: 2,
+      explanation:
+        'FIFO(A→B→C): 완료 (5, 13, 16) 평균 = 34/3 ≈ 11.33. SJF(C→A→B): (3, 8, 16) 평균 = 27/3 = 9. 차이 ≈ 2.33 → 가장 가까운 2.',
+    },
+    {
+      id: 'ch04-mc-5',
+      type: 'multiple-choice',
+      prompt:
+        '다음 중 "선점(preemption)" 이 스케줄러에 주는 영향으로 틀린 것은?',
+      options: [
+        { text: '긴 작업이 도중에 중단되어 짧은 작업에 CPU 를 양보할 수 있다.' },
+        { text: 'context switch 오버헤드가 증가한다.' },
+        { text: 'non-preemptive 보다 response time 이 나빠진다.' },
+        { text: '새로 도착한 짧은 작업에 즉시 대응할 수 있다.' },
+      ],
+      answerIndex: 2,
+      explanation:
+        '선점은 오히려 response time 을 좋게 하는 방향이다 (STCF, RR 참조).',
+    },
+
+    // ── 추가 : 코드 빈칸 ─────────────────────────────
+    {
+      id: 'ch04-code-3',
+      type: 'code-blank',
+      language: 'c',
+      prompt:
+        'STCF 스케줄러의 "새 작업 도착" 처리. 남은 시간 비교 로직을 채우시오.',
+      segments: [
+        { kind: 'text', text: 'void on_arrival(proc_t *incoming) {\n    add_to_ready(incoming);\n    if (incoming->remaining < ' },
+        { kind: 'blank', answers: ['current->remaining', 'current.remaining'], width: 20 },
+        { kind: 'text', text: ') {\n        preempt(current);\n        run(' },
+        { kind: 'blank', answers: ['incoming'], width: 10 },
+        { kind: 'text', text: ');\n    }\n}\n' },
+      ],
+      explanation:
+        '새 작업의 총 시간이 현재 작업의 남은 시간보다 짧으면 선점.',
+    },
+
+    // ── 추가 : True / False ───────────────────────
+    {
+      id: 'ch04-tf-5',
+      type: 'true-false',
+      prompt:
+        'Round Robin 에서 time slice 를 무한대로 설정하면, 효과적으로 FIFO 와 동일해진다.',
+      answer: true,
+      explanation:
+        '한번 잡으면 끝까지 돌아가므로 사실상 FIFO.',
+    },
+    {
+      id: 'ch04-tf-6',
+      type: 'true-false',
+      prompt:
+        'Response time 은 "작업이 언제 끝나느냐" 를 측정하고, Turnaround time 은 "첫 반응까지 걸린 시간" 을 측정한다.',
+      answer: false,
+      explanation:
+        '정의가 반대로 되어 있다. Turnaround = completion − arrival, Response = first_run − arrival.',
+    },
+    {
+      id: 'ch04-tf-7',
+      type: 'true-false',
+      prompt:
+        'STCF 는 대기 큐에 있는 작업 뿐만 아니라, 현재 실행 중인 작업의 "남은 시간" 도 함께 비교해 선점 여부를 결정한다.',
+      answer: true,
+    },
+    {
+      id: 'ch04-tf-8',
+      type: 'true-false',
+      prompt:
+        'CPU-bound 와 I/O-bound 작업이 섞여 있을 때 I/O 를 고려한 스케줄링은, I/O 요청으로 blocked 된 프로세스가 blocked 상태 동안 CPU 를 잡지 않도록 해 전체 utilization 을 높인다.',
+      answer: true,
+    },
+
+    // ── 추가 : 단답 ───────────────────────────────
+    {
+      id: 'ch04-short-3',
+      type: 'short-answer',
+      prompt:
+        'SJF 가 가정한 5 가지 workload 가정 중, "SJF" 스스로가 (동시 도착이라는 전제를 제외하고) 암묵적으로 깨뜨리지 않으려 쓰고 있는 가정은 무엇인가? (영문 한 단어)',
+      answers: ['non-preemptive', 'nonpreemptive', 'non preemptive'],
+      hint: '선점 여부',
+      explanation:
+        'SJF 는 non-preemptive. "한번 시작한 작업은 끝까지" 가정을 이용한다.',
+    },
+    {
+      id: 'ch04-short-4',
+      type: 'short-answer',
+      prompt:
+        'A(t=0 도착, 10s), B(t=2 도착, 2s), C(t=4 도착, 2s) 를 STCF 로 스케줄할 때 평균 Turnaround Time 은? (숫자만, 소수점 허용)',
+      answers: ['6', '6.0', '6 초', '6.00'],
+      hint: '숫자만',
+      explanation:
+        't=0..2 A 실행(남은 8s). t=2 B(2s) 도착 → B 선점. t=2..4 B 실행 중 t=4 C(2s) 도착, B 남은 0s 완료=4, 이후 C 완료=6. 이어 A 6..14 완료=14. Turnaround: A=14, B=4−2=2, C=6−4=2. 평균 = (14+2+2)/3 = 18/3 = 6.',
+    },
+
+    // ── 추가 : 서술형 ─────────────────────────────
+    {
+      id: 'ch04-essay-3',
+      type: 'essay',
+      prompt:
+        'RR 의 평균 Response Time 이 SJF/STCF 보다 일반적으로 더 좋은 이유를 구체적 예로 설명하시오.',
+      modelAnswer:
+        'SJF/STCF 는 짧은 작업을 먼저 "끝까지" 돌려 보내 turnaround 는 좋지만, 어떤 작업이 앞에 있으면 뒤의 모든 작업은 한동안 첫 CPU 도 받지 못한다.\n\n예: A(10s), B(10s), C(10s) 가 t=0 에 동시 도착하고 모두 실행 시간이 같다고 하자.\n- SJF: 한 작업씩 순서대로 실행. 각각의 first_run 은 0, 10, 20 → response = 0, 10, 20 → 평균 10.\n- RR (time slice 1s): 0..1 A, 1..2 B, 2..3 C, ... → first_run = 0, 1, 2 → response = 0, 1, 2 → 평균 1.\n\nRR 은 매 time slice 마다 다음 작업으로 옮겨 가므로, 모든 작업이 거의 즉시 처음 실행을 경험한다. 다만 한 작업이 끝나기까지는 다른 작업들과 CPU 를 나눠 써야 하므로 turnaround 는 악화된다. 바로 이 트레이드오프가 "response 냐 turnaround 냐" 이다.',
+      rubric: [
+        'Response 와 first-run 의 관계',
+        '구체 수치 예시',
+        'Turnaround 악화의 트레이드오프',
+      ],
+    },
   ],
 };
 

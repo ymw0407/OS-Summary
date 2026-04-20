@@ -162,6 +162,132 @@ const quiz: QuizSet = {
         '실제 CPU 가 두 방식을 모두 썼다는 사실(선택)',
       ],
     },
+
+    // ── 추가 : 객관식 (혼동 포인트) ─────────────────
+    {
+      id: 'ch10-mc-4',
+      type: 'multiple-choice',
+      prompt:
+        'Internal fragmentation 과 external fragmentation 에 대한 설명 중 옳은 것은?',
+      options: [
+        { text: 'Segmentation 은 internal, Paging 은 external fragmentation 이 주된 문제이다.' },
+        { text: 'Segmentation 은 external, Paging 은 internal fragmentation 이 주된 문제이다.' },
+        { text: '두 단편화는 같은 의미로 쓰인다.' },
+        { text: '두 단편화는 모두 compaction 으로 동일하게 해결된다.' },
+      ],
+      answerIndex: 1,
+      explanation:
+        '가변 크기(segment) → 외부, 고정 크기(page) → 내부 단편화.',
+    },
+    {
+      id: 'ch10-mc-5',
+      type: 'multiple-choice',
+      prompt:
+        '"세그먼트 공유(code sharing)" 가 가능한 기본 전제는?',
+      options: [
+        { text: '각 세그먼트가 같은 크기여야 한다.' },
+        { text: '공유할 세그먼트가 read-only 여야 한다.' },
+        { text: '공유할 세그먼트가 stack 이어야 한다.' },
+        { text: '공유할 세그먼트가 heap 이어야 한다.' },
+      ],
+      answerIndex: 1,
+      explanation:
+        '쓰기가 가능한 세그먼트는 서로 다른 프로세스가 값을 덮어쓰게 되어 공유 불가.',
+    },
+
+    // ── 추가 : 코드 빈칸 ─────────────────────────
+    {
+      id: 'ch10-code-3',
+      type: 'code-blank',
+      language: 'c',
+      prompt:
+        '세그먼트 테이블 엔트리 정의. 빈칸을 채우시오.',
+      segments: [
+        { kind: 'text', text: 'typedef struct seg_entry {\n    uintptr_t base;\n    size_t    size;\n    uint8_t   ' },
+        { kind: 'blank', answers: ['grows_positive', 'grow_pos', 'direction'], width: 16 },
+        { kind: 'text', text: '; // 1=양의 방향, 0=음의 방향\n    uint8_t   ' },
+        { kind: 'blank', answers: ['protection', 'prot'], width: 10 },
+        { kind: 'text', text: ';   // R/W/X 비트\n} seg_entry_t;\n' },
+      ],
+      explanation:
+        'direction(grows_positive) 과 protection 비트가 현대적 세그먼트의 핵심 속성.',
+    },
+
+    // ── 추가 : True / False ─────────────────
+    {
+      id: 'ch10-tf-5',
+      type: 'true-false',
+      prompt:
+        'Explicit 방식에서 14-bit 주소의 상위 2 비트를 세그먼트 번호로 쓰면 총 4 개 세그먼트를 표현할 수 있다.',
+      answer: true,
+    },
+    {
+      id: 'ch10-tf-6',
+      type: 'true-false',
+      prompt:
+        '세그먼트마다 독립된 base/bound 가 있기 때문에, 한 세그먼트의 성장이 다른 세그먼트의 물리 배치에 직접 영향을 준다.',
+      answer: false,
+      explanation:
+        '각각 물리 메모리의 다른 곳에 놓여 있으므로 서로 독립적으로 성장 가능(공간이 충분하면).',
+    },
+    {
+      id: 'ch10-tf-7',
+      type: 'true-false',
+      prompt:
+        '현대 x86_64 리눅스에서는 세그먼트 방식이 주된 메모리 관리 기법이다.',
+      answer: false,
+      explanation:
+        'x86_64 에서 세그먼트 레지스터는 거의 flat 으로 설정되어 사실상 paging 으로 모든 관리를 한다.',
+    },
+    {
+      id: 'ch10-tf-8',
+      type: 'true-false',
+      prompt:
+        'Compaction 을 수행하려면, 프로세스가 참조 중인 포인터 값들도 모두 갱신해야 한다.',
+      answer: false,
+      explanation:
+        '세그먼트는 base 재설정만으로 가상 주소는 그대로 유지된다. 내부 포인터는 가상 주소이므로 이동해도 바뀌지 않는다(단 물리 메모리는 이동).',
+    },
+
+    // ── 추가 : 단답 ───────────────────────────
+    {
+      id: 'ch10-short-3',
+      type: 'short-answer',
+      prompt:
+        '세그먼트 공유로 물리 메모리를 절약하는 전형적인 예를 한 문장으로 설명하시오.',
+      answers: [
+        '여러 프로세스가 같은 라이브러리(또는 프로그램) 의 code 세그먼트를 물리적으로 공유하는 경우',
+        '같은 프로그램의 code 세그먼트를 여러 프로세스가 공유',
+        'libc 같은 공유 라이브러리의 code 를 공유',
+        '같은 프로그램 실행 인스턴스의 code 공유',
+      ],
+      hint: 'read-only code + 여러 인스턴스',
+      explanation: '같은 바이너리를 여러 번 실행했을 때 code 페이지/세그먼트를 공유.',
+    },
+    {
+      id: 'ch10-short-4',
+      type: 'short-answer',
+      prompt:
+        '14-bit 가상 주소에서 상위 2 비트가 세그먼트 번호, 나머지가 offset 인 경우, 가상 주소 0b00_0001_0101_1010 이 가리키는 세그먼트 번호는? (숫자만)',
+      answers: ['0'],
+      hint: '상위 두 비트 값',
+      explanation: '상위 2 비트 = 00 → 세그먼트 0.',
+    },
+
+    // ── 추가 : 서술형 ─────────────────────────
+    {
+      id: 'ch10-essay-3',
+      type: 'essay',
+      prompt:
+        'Compaction 이 external fragmentation 을 해결하는 방식과, 이 방법이 실전에서 자주 쓰이지 않는 이유를 설명하시오.',
+      modelAnswer:
+        'Compaction 은 실행 중인 프로세스들의 세그먼트를 물리 메모리 상에서 이동시켜, 흩어져 있던 작은 free 조각들을 하나의 큰 연속 공간으로 합치는 기법이다. 각 세그먼트의 base 값을 재설정하면 프로세스의 가상 주소는 그대로 둔 채 물리 위치만 바뀌므로, 사용자 프로그램에게는 투명하다.\n\n실전에서 자주 쓰이지 않는 이유:\n- 이동해야 할 데이터가 크다 — 수 MB/GB 의 메모리 복사 오버헤드.\n- 이동 중에는 해당 프로세스를 중단해야 하고(또는 정교한 동기화가 필요), 사용자 체감 지연이 커진다.\n- 자주 compaction 을 돌리면 시스템 throughput 이 크게 떨어진다.\n- 근본적으로 가변 크기 할당의 fragmentation 은 완전히 없앨 수 없어 주기적 compaction 이 계속 필요하다.\n\n그래서 실전에서는 "고정 크기 단위로 잘게 쪼개서 external fragmentation 자체를 없애는" paging 으로 전환하는 것이 일반적이다.',
+      rubric: [
+        'Compaction 의 메커니즘(세그먼트 이동 + base 재설정)',
+        '비용의 구체적 원인',
+        'Paging 으로의 전환 이유',
+      ],
+    },
   ],
 };
 

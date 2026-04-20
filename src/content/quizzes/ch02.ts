@@ -171,6 +171,128 @@ const quiz: QuizSet = {
         '각 프로세스에서 불필요한 파이프 끝을 닫아야 함을 언급',
       ],
     },
+
+    // ── 추가 : 객관식 (혼동 포인트) ─────────────────────
+    {
+      id: 'ch02-mc-4',
+      type: 'multiple-choice',
+      prompt:
+        '다음 중 "fork 직후 부모와 자식이 공유하는" 것은?',
+      options: [
+        { text: 'heap 의 실제 데이터 바이트' },
+        { text: '스택 프레임의 지역 변수' },
+        { text: 'open 된 file 객체(같은 offset 을 공유)' },
+        { text: 'PID' },
+      ],
+      answerIndex: 2,
+      explanation:
+        'fork 는 fd 테이블을 "복제" 하지만, 두 테이블 엔트리가 같은 커널 내 file 객체를 가리키므로 read/write 시 offset 이 공유된다. heap/stack 의 실제 내용은 독립적, PID 는 다르다.',
+    },
+    {
+      id: 'ch02-mc-5',
+      type: 'multiple-choice',
+      prompt:
+        '자식이 먼저 종료되었는데 부모가 wait() 하지 않아 정리되지 못한 상태의 프로세스를 무엇이라 하는가?',
+      options: [
+        { text: 'Orphan process' },
+        { text: 'Zombie process' },
+        { text: 'Daemon process' },
+        { text: 'Idle process' },
+      ],
+      answerIndex: 1,
+      explanation:
+        'Zombie: 이미 종료되었지만 PCB 가 남아 있는 상태. Orphan 은 반대로 부모가 먼저 죽은 경우.',
+    },
+
+    // ── 추가 : 코드 빈칸 ─────────────────────────────
+    {
+      id: 'ch02-code-3',
+      type: 'code-blank',
+      language: 'c',
+      prompt:
+        '표준 출력을 파일로 리다이렉션하는 과정이다. 빈칸을 채우시오.',
+      segments: [
+        { kind: 'text', text: 'int fd = open("out.txt", O_WRONLY | O_CREAT | O_TRUNC, 0644);\n// stdout(1) 을 닫고 → fd 를 1 에 복제 → fd 는 정리\nclose(' },
+        { kind: 'blank', answers: ['1', 'STDOUT_FILENO'], width: 14 },
+        { kind: 'text', text: ');\ndup2(fd, ' },
+        { kind: 'blank', answers: ['1', 'STDOUT_FILENO'], width: 14 },
+        { kind: 'text', text: ');\nclose(fd);\n// 이후 printf 는 out.txt 로 향한다\n' },
+      ],
+      explanation:
+        'dup2(src, dst) 는 src 를 dst 번호에 복제. src 를 1 에 복제해 stdout 을 새 대상으로 바꾼 뒤 원본 fd 는 닫는다.',
+    },
+
+    // ── 추가 : True / False ───────────────────────
+    {
+      id: 'ch02-tf-5',
+      type: 'true-false',
+      prompt:
+        'exec 성공 후에도 프로세스의 PID 는 유지된다.',
+      answer: true,
+      explanation:
+        'exec 은 "프로세스" 를 새로 만들지 않는다 — 같은 프로세스의 메모리 이미지만 교체되므로 PID 는 그대로.',
+    },
+    {
+      id: 'ch02-tf-6',
+      type: 'true-false',
+      prompt:
+        'exec 은 기본적으로 열려 있던 file descriptor 를 모두 닫는다.',
+      answer: false,
+      explanation:
+        '기본적으로 fd 테이블은 유지된다. 닫히게 하려면 FD_CLOEXEC 플래그를 설정해야 한다.',
+    },
+    {
+      id: 'ch02-tf-7',
+      type: 'true-false',
+      prompt:
+        'fork() 에서 부모와 자식이 "fork 다음 줄부터" 이어 실행되는 이유는, 두 프로세스가 같은 PC 값과 각자의 스택·레지스터를 가지고 리턴 이후 분기하기 때문이다.',
+      answer: true,
+    },
+    {
+      id: 'ch02-tf-8',
+      type: 'true-false',
+      prompt:
+        'pipe 는 같은 시스템 안의 "부모-자식" 관계가 아닌 두 임의 프로세스 사이에서도 자동으로 동작한다.',
+      answer: false,
+      explanation:
+        '일반 pipe 는 fork 로 fd 를 상속해야 통신할 수 있다. 임의 두 프로세스 간 통신은 named pipe(FIFO), socket 등이 필요.',
+    },
+
+    // ── 추가 : 단답 ───────────────────────────────
+    {
+      id: 'ch02-short-3',
+      type: 'short-answer',
+      prompt:
+        '자식 프로세스를 만들고 같은 프로세스 안에서 새 프로그램으로 완전히 덮어쓰려 할 때 일반적으로 호출하는 두 시스템콜 이름을 순서대로 쓰시오. (영문, 쉼표 구분)',
+      answers: ['fork, exec', 'fork,exec', 'fork, execvp', 'fork, execve'],
+      explanation:
+        'fork 로 자식 생성 → 자식에서 exec 으로 프로그램 교체.',
+    },
+    {
+      id: 'ch02-short-4',
+      type: 'short-answer',
+      prompt:
+        'execvp 가 정상 실행되면 반환값은 무엇인가? (숫자/문자열, 또는 "돌아오지 않음")',
+      answers: ['돌아오지 않음', '반환하지 않음', 'does not return', 'no return', '반환안함'],
+      hint: '성공 시에는 다음 줄이 실행되지 않는다',
+      explanation:
+        'exec 성공 시에는 반환이 없고, 실패 시에만 -1 이 반환된다.',
+    },
+
+    // ── 추가 : 서술형 ─────────────────────────────
+    {
+      id: 'ch02-essay-3',
+      type: 'essay',
+      prompt:
+        'Zombie 와 Orphan 프로세스를 정의하고, 각각 시스템이 어떻게 처리하는지 설명하시오.',
+      modelAnswer:
+        'Zombie: 자식이 먼저 종료되었지만 부모가 아직 wait() 을 호출하지 않은 상태. 프로세스의 대부분의 자원(메모리 등) 은 회수되지만, 종료 상태 코드를 부모에게 전달하기 위해 PCB 는 남아 있다. 부모가 wait/waitpid 를 호출하면 PCB 가 제거되고 완전히 사라진다. 만약 부모가 wait 을 하지 않으면 좀비가 누적되어 PID 고갈 같은 문제가 생길 수 있다.\n\nOrphan: 부모가 자식보다 먼저 종료된 상태. 이 경우 리눅스에서는 init (PID 1, 또는 systemd/subreaper) 이 해당 프로세스를 자동으로 입양해 wait 을 대신 해 준다. 따라서 orphan 은 보통 정상적으로 정리된다.',
+      rubric: [
+        'Zombie 의 정의와 발생 원인',
+        'wait/waitpid 로 정리된다는 점',
+        'Orphan 의 정의와 init 입양',
+      ],
+    },
   ],
 };
 
