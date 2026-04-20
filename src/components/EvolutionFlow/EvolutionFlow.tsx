@@ -142,6 +142,20 @@ export function EvolutionFlow({
             <h2 className={s.detailTitle}>{active.title}</h2>
             <p className={s.detailTagline}>{active.tagline}</p>
 
+            {active.image && (
+              <figure className={s.figure}>
+                <img
+                  className={s.figureImg}
+                  src={resolveFigure(active.image.src)}
+                  alt={active.image.alt ?? active.title}
+                  loading="lazy"
+                />
+                {active.image.alt && (
+                  <figcaption className={s.figureCaption}>{active.image.alt}</figcaption>
+                )}
+              </figure>
+            )}
+
             <section className={s.section}>
               <div className={`${s.sectionLabel} ${s.sectionIdea}`}>핵심 아이디어</div>
               <div className={s.sectionBody}>{active.keyIdea}</div>
@@ -192,4 +206,11 @@ export function EvolutionFlow({
 
 function truncate(s: string, n: number): string {
   return s.length > n ? s.slice(0, n - 1) + '…' : s;
+}
+
+function resolveFigure(src: string): string {
+  if (/^(https?:)?\/\//.test(src) || src.startsWith('data:')) return src;
+  const base = import.meta.env.BASE_URL || '/';
+  const trimmed = src.replace(/^\//, '');
+  return base.endsWith('/') ? base + trimmed : base + '/' + trimmed;
 }

@@ -8,6 +8,8 @@ export type EvolutionNode = {
   problem?: string; // 다음 노드로 이어지는 불씨. 없으면 최종 노드.
   phase?: string; // 새 phase 의 첫 노드에만 지정. 렌더링 시 그 위에 구분 헤더가 붙음.
   to: { chapter: string; anchor?: string };
+  // 본문 PDF 에서 크롭한 figure. public/figures/ 기준의 경로.
+  image?: { src: string; alt?: string };
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -31,6 +33,7 @@ export const schedulerChain: EvolutionNode[] = [
     problem:
       '가정을 하나만 깨도 무너진다. 길이가 다르면 긴 작업이 앞에 올 때 짧은 작업이 밀려 평균 turnaround가 폭등한다 — Convoy Effect.',
     to: { chapter: '04-scheduling', anchor: 'fifo' },
+    image: { src: '/figures/ch04-fifo.png', alt: 'FIFO — 5가지 Workload 가정이 모두 유지된 출발점' },
   },
   {
     id: 'sjf',
@@ -42,6 +45,7 @@ export const schedulerChain: EvolutionNode[] = [
     problem:
       'Non-preemptive다. 긴 작업이 이미 실행 중인데 더 짧은 작업이 뒤늦게 도착해도 끊을 수 없다 → 현실에서는 최적이 아니다.',
     to: { chapter: '04-scheduling', anchor: 'sjf' },
+    image: { src: '/figures/ch04-sjf.png', alt: 'SJF — "가장 짧은 작업부터" 정의' },
   },
   {
     id: 'stcf',
@@ -53,6 +57,7 @@ export const schedulerChain: EvolutionNode[] = [
     problem:
       'Response Time(첫 CPU 할당까지 걸린 시간)이 매우 나쁘다. 사용자 입장에서는 "일단 빨리 반응" 하는 편이 낫다.',
     to: { chapter: '04-scheduling', anchor: 'stcf' },
+    image: { src: '/figures/ch04-stcf.png', alt: 'STCF — 가정 3 (run to completion) 제거' },
   },
 
   // Phase 2: 응답성 확보
@@ -72,6 +77,7 @@ export const schedulerChain: EvolutionNode[] = [
     problem:
       '평균 turnaround는 SJF/STCF보다 훨씬 나빠진다. 또 context switch 비용이 있고, 여전히 "실행 시간을 안다" 는 가정이 남아 있다.',
     to: { chapter: '04-scheduling', anchor: 'round-robin' },
+    image: { src: '/figures/ch04-rr-timeline.png', alt: 'RR vs SJF 타임라인 비교' },
   },
   {
     id: 'io-aware',
@@ -88,6 +94,7 @@ export const schedulerChain: EvolutionNode[] = [
     problem:
       '여전히 핵심 가정 하나가 남는다 — OS가 작업 실행 시간을 미리 안다는 것. 현실에선 모른다.',
     to: { chapter: '04-scheduling' },
+    image: { src: '/figures/ch04-io-overlap.png', alt: 'I/O 대기 구간에 다른 작업 겹쳐 쓰기' },
   },
 
   // Phase 3: Oracle 없이 살기
@@ -110,6 +117,7 @@ export const schedulerChain: EvolutionNode[] = [
     problem:
       '세 가지 함정: (1) Starvation — 상위 큐가 붐비면 하위가 굶음, (2) Gaming — time slice 직전에 I/O 던져 강등 회피, (3) Behavior change — 작업 성격이 바뀔 때 대응 못함.',
     to: { chapter: '05-mlfq', anchor: 'mlfq' },
+    image: { src: '/figures/ch05-mlfq-queues.png', alt: 'MLFQ 다단계 큐 구조' },
   },
   {
     id: 'priority-boost',
@@ -120,6 +128,7 @@ export const schedulerChain: EvolutionNode[] = [
     advantage: 'Starvation 해소. Behavior change 에도 재적응 기회.',
     problem: 'Gaming 문제는 여전히 남는다.',
     to: { chapter: '05-mlfq' },
+    image: { src: '/figures/ch05-mlfq-boost.png', alt: 'Priority Boost 적용 전/후 비교' },
   },
   {
     id: 'better-accounting',
@@ -131,6 +140,7 @@ export const schedulerChain: EvolutionNode[] = [
     problem:
       '효율성은 좋아졌지만 여전히 "공정성" 자체를 목표로 삼는 관점은 아니다. 비율 기반의 새 패러다임이 필요.',
     to: { chapter: '05-mlfq' },
+    image: { src: '/figures/ch05-mlfq-allotment.png', alt: '누적 allotment 기반 강등' },
   },
   {
     id: 'mlfq-tuning',
@@ -147,6 +157,7 @@ export const schedulerChain: EvolutionNode[] = [
     problem:
       'MLFQ 가지치기로 최적화했지만, 근본적으로 "비율을 정확히 맞춘다" 는 목표는 없다 → Fair-Share 패러다임으로 관점 전환.',
     to: { chapter: '05-mlfq' },
+    image: { src: '/figures/ch05-mlfq-timeslices.png', alt: '큐 레벨별 time slice' },
   },
 
   // Phase 4: Fair-Share 패러다임
@@ -166,6 +177,7 @@ export const schedulerChain: EvolutionNode[] = [
     problem:
       '확률적이다. 짧은 구간에서는 실제 비율이 기대치에서 크게 흔들릴 수 있다.',
     to: { chapter: '06-lottery-stride-cfs', anchor: 'lottery-scheduling' },
+    image: { src: '/figures/ch06-lottery.png', alt: '당첨 티켓 → 실행 순서' },
   },
   {
     id: 'ticket-mechanisms',
@@ -182,6 +194,7 @@ export const schedulerChain: EvolutionNode[] = [
     problem:
       '메커니즘을 다 갖춰도, 스케줄링 자체가 "확률적" 이라는 본질 한계는 남는다.',
     to: { chapter: '06-lottery-stride-cfs', anchor: 'lottery-scheduling' },
+    image: { src: '/figures/ch06-lottery-currency.png', alt: 'Ticket currency — 로컬/전역 변환' },
   },
   {
     id: 'stride',
@@ -198,6 +211,7 @@ export const schedulerChain: EvolutionNode[] = [
     problem:
       '새 프로세스가 pass=0 으로 들어오면 한동안 CPU를 독점. sleep→wake 후에도 pass 보정이 필요.',
     to: { chapter: '06-lottery-stride-cfs', anchor: 'stride-scheduling' },
+    image: { src: '/figures/ch06-stride.png', alt: 'Stride/pass 값 추적 표' },
   },
 
   // Phase 5: 현대 리눅스
@@ -212,6 +226,7 @@ export const schedulerChain: EvolutionNode[] = [
     problem:
       '고정 time slice면 프로세스 수 변화에 적응 못함. 실제 CPU 사용량을 어떻게 "공평" 하게 측정할지도 설계 필요.',
     to: { chapter: '06-lottery-stride-cfs', anchor: 'cfs-completely-fair-scheduling' },
+    image: { src: '/figures/ch06-cfs-vruntime.png', alt: 'vruntime 가중치 계산 표' },
   },
   {
     id: 'cfs-latency',
@@ -227,6 +242,7 @@ export const schedulerChain: EvolutionNode[] = [
     advantage: 'context switch 비용을 제어하면서도 반응성을 유지.',
     problem: '이제 비율도 반영해야 한다. 모두가 정말 똑같은 비율이어야 할까?',
     to: { chapter: '06-lottery-stride-cfs', anchor: 'cfs-completely-fair-scheduling' },
+    image: { src: '/figures/ch06-cfs-latency.png', alt: 'sched_latency 를 n개로 나눈 타임라인' },
   },
   {
     id: 'cfs-nice-weight',
@@ -242,6 +258,7 @@ export const schedulerChain: EvolutionNode[] = [
     advantage: '공정함을 유지하면서도 정책적 차등이 가능.',
     problem: '매 틱마다 "최소 vruntime" 을 빠르게 찾아야 한다. 자료구조 선택이 중요.',
     to: { chapter: '06-lottery-stride-cfs', anchor: 'cfs-completely-fair-scheduling' },
+    image: { src: '/figures/ch06-cfs-nice.png', alt: 'nice → weight → time slice 매핑' },
   },
   {
     id: 'cfs-rbtree',
@@ -253,6 +270,7 @@ export const schedulerChain: EvolutionNode[] = [
     problem:
       '오랫동안 잠들어 있던 프로세스가 깨어나 vruntime이 극단적으로 작으면 CPU를 독점할 수 있다.',
     to: { chapter: '06-lottery-stride-cfs', anchor: 'cfs-completely-fair-scheduling' },
+    image: { src: '/figures/ch06-cfs-rbtree.png', alt: 'Red-Black Tree 기반 ready queue' },
   },
   {
     id: 'cfs-sleep-boost',
@@ -281,6 +299,7 @@ export const memoryChain: EvolutionNode[] = [
     advantage: '극도로 단순한 구조.',
     problem: '여러 프로그램을 동시에 돌리기 시작하면 서로의 메모리를 침범할 수 있다.',
     to: { chapter: '08-address-space', anchor: 'address-space' },
+    image: { src: '/figures/ch08-single-process.png', alt: 'OS + 단일 프로그램 메모리 레이아웃' },
   },
   {
     id: 'multiprogramming',
@@ -290,6 +309,7 @@ export const memoryChain: EvolutionNode[] = [
       '여러 프로세스를 물리 메모리의 서로 다른 구역에 나눠 배치. 하지만 각자 physical address를 직접 쓰게 두면 실수/악의적 접근으로 남의 메모리, OS까지 깨질 수 있다.',
     problem: '보호와 효율을 동시에 만족시킬 추상화가 필요하다.',
     to: { chapter: '08-address-space' },
+    image: { src: '/figures/ch08-multiprogramming.png', alt: '여러 프로세스가 물리 메모리에 공존' },
   },
 
   // Phase 2: Address Space 추상화
@@ -308,6 +328,7 @@ export const memoryChain: EvolutionNode[] = [
     advantage: '프로세스 간 격리 + 프로그래머 입장에서의 단순화.',
     problem: '어떻게 이 가상 주소를 물리 주소로 빠르게 변환할 것인가?',
     to: { chapter: '08-address-space', anchor: 'address-space' },
+    image: { src: '/figures/ch08-address-space.png', alt: 'code / heap / stack 가상 주소 공간 레이아웃' },
   },
 
   // Phase 3: 연속 재배치
@@ -326,6 +347,7 @@ export const memoryChain: EvolutionNode[] = [
     advantage: '단순 · 빠름 · 보호까지 한 번에.',
     problem: '전체 주소 공간이 하나의 "큰 연속 블록" 으로 잡힌다. stack↔heap 사이 빈 공간도 통째로 물리 메모리를 차지 → 낭비.',
     to: { chapter: '09-base-and-bound' },
+    image: { src: '/figures/ch09-base-bound.png', alt: 'base + bound 레지스터로 가상 → 물리 변환' },
   },
   {
     id: 'base-bound-hw-os',
@@ -342,6 +364,7 @@ export const memoryChain: EvolutionNode[] = [
     advantage: '하드웨어 단순성을 유지한 채 OS가 정책 결정을 담당.',
     problem: '여전히 주소 공간 "전체" 를 연속으로 잡는다 — 내부의 빈 틈이 그대로 낭비.',
     to: { chapter: '09-base-and-bound', anchor: 'hardware-requirements' },
+    image: { src: '/figures/ch09-context-switch.png', alt: 'Context switch 시 PCB 의 base/bound 저장·복원' },
   },
 
   // Phase 4: 논리 단위별로 쪼개기
@@ -359,6 +382,7 @@ export const memoryChain: EvolutionNode[] = [
     advantage: 'sparse address space 지원. code sharing 기반 마련.',
     problem: '어느 세그먼트인지 어떻게 판별하지? 스택은 반대 방향으로 자라는데?',
     to: { chapter: '10-segmentation' },
+    image: { src: '/figures/ch10-segmentation-basic.png', alt: 'code / heap / stack 세그먼트가 물리 메모리에 분산 배치' },
   },
   {
     id: 'segmentation-bits',
@@ -373,6 +397,7 @@ export const memoryChain: EvolutionNode[] = [
     ],
     advantage: 'code 공유로 물리 메모리 절약 + 쓰기 보호로 안전.',
     to: { chapter: '10-segmentation' },
+    image: { src: '/figures/ch10-seg-direction.png', alt: 'Stack 세그먼트 — 역방향 성장 + "Grows Positive?" 비트' },
   },
   {
     id: 'segmentation-identify',
@@ -388,6 +413,7 @@ export const memoryChain: EvolutionNode[] = [
     problem:
       '그런데 세그먼트는 가변 크기 + contiguous 배치라는 특성 때문에 더 큰 문제가 기다리고 있다.',
     to: { chapter: '10-segmentation' },
+    image: { src: '/figures/ch10-seg-bits.png', alt: '가상 주소 상위 비트로 세그먼트 식별' },
   },
   {
     id: 'external-fragmentation',
@@ -397,6 +423,7 @@ export const memoryChain: EvolutionNode[] = [
       '가변 크기 세그먼트를 여기저기 놓다 보면 물리 메모리에 작은 빈틈들이 생긴다. 총 free 용량은 충분해도 "큰 연속 공간" 이 없어서 새 세그먼트를 못 받는다.',
     problem: 'Compaction? — 비싸다. 실행 중 세그먼트 이동 + 메모리 복사 + base 전부 재설정.',
     to: { chapter: '10-segmentation' },
+    image: { src: '/figures/ch10-external-fragmentation.png', alt: '압축 전/후 비교 — external fragmentation' },
   },
 
   // Phase 5: 가변 크기 할당의 실전
@@ -416,6 +443,7 @@ export const memoryChain: EvolutionNode[] = [
     advantage: '가변 크기 요청을 유연하게 처리.',
     problem: '어떤 chunk를 고를 것인가? 정책이 필요.',
     to: { chapter: '11-free-space-management' },
+    image: { src: '/figures/ch11-free-list.png', alt: 'heap + free list (head → node → NULL)' },
   },
   {
     id: 'fit-policies',
@@ -431,6 +459,7 @@ export const memoryChain: EvolutionNode[] = [
     ],
     problem: '그래도 가변 크기 할당의 근본 단편화는 남는다.',
     to: { chapter: '11-free-space-management' },
+    image: { src: '/figures/ch11-fit-policies.png', alt: 'best-fit vs worst-fit 결과 비교' },
   },
   {
     id: 'segregated-list',
@@ -441,6 +470,7 @@ export const memoryChain: EvolutionNode[] = [
     advantage: '같은 크기 요청이 반복될 때 탐색 비용이 극단적으로 낮다.',
     problem: '크기별로 얼마나 미리 확보할지 — 정책 복잡성이 증가.',
     to: { chapter: '11-free-space-management' },
+    image: { src: '/figures/ch11-segregated.png', alt: 'Segregated list — 크기별 전용 풀' },
   },
   {
     id: 'buddy',
@@ -452,6 +482,7 @@ export const memoryChain: EvolutionNode[] = [
     problem:
       '2의 거듭제곱 단위라 33B 요청에 64B 할당 → Internal Fragmentation. 그리고 가변 크기라는 근본 한계는 여전히 남는다.',
     to: { chapter: '11-free-space-management' },
+    image: { src: '/figures/ch11-buddy-split.png', alt: 'Buddy System — 반씩 분할' },
   },
 
   // Phase 6: 고정 크기 패러다임
@@ -470,6 +501,7 @@ export const memoryChain: EvolutionNode[] = [
     advantage: '가변 크기 할당의 고질병에서 벗어남.',
     problem: '메모리 접근마다 PTE를 먼저 읽어야 해 2배 느리다.',
     to: { chapter: '12-paging-intro' },
+    image: { src: '/figures/ch12-paging.png', alt: '가상 주소 공간을 page → frame 으로 매핑' },
   },
   {
     id: 'pte-flags',
@@ -487,6 +519,7 @@ export const memoryChain: EvolutionNode[] = [
     advantage: '보호 + 존재 + 접근 이력을 한 엔트리가 통합 관리.',
     problem: '프로세스당 page table 자체가 크고, 매 접근마다 이걸 읽어야 한다 → 느리다.',
     to: { chapter: '12-paging-intro' },
+    image: { src: '/figures/ch12-pte.png', alt: 'x86 PTE 비트 구성' },
   },
 
   // Phase 7: 번역 가속
@@ -504,6 +537,7 @@ export const memoryChain: EvolutionNode[] = [
     advantage: 'paging의 번역 오버헤드를 locality로 상쇄.',
     problem: 'miss 처리는 누가 하지? 프로세스가 바뀌면 어떻게 되지?',
     to: { chapter: '13-tlb' },
+    image: { src: '/figures/ch13-tlb.png', alt: 'MMU / TLB / Page Table 흐름' },
   },
   {
     id: 'tlb-miss-handling',
@@ -529,6 +563,7 @@ export const memoryChain: EvolutionNode[] = [
     ],
     advantage: 'context switch마다 TLB flush하는 비용 회피.',
     to: { chapter: '13-tlb' },
+    image: { src: '/figures/ch13-asid.png', alt: 'ASID 태그가 붙은 TLB (두 프로세스 공존)' },
   },
   {
     id: 'tlb-replace',
@@ -539,6 +574,7 @@ export const memoryChain: EvolutionNode[] = [
     advantage: '지역성에 잘 맞는 간단하고 효과적인 정책.',
     problem: 'TLB가 있어 빠르긴 한데, page table 자체의 크기 문제는 그대로 남아 있다.',
     to: { chapter: '13-tlb' },
+    image: { src: '/figures/ch13-tlb-lru.png', alt: 'TLB LRU replacement' },
   },
 
   // Phase 8: 테이블 공간 줄이기
@@ -551,6 +587,7 @@ export const memoryChain: EvolutionNode[] = [
       '32bit + 4KB page + 4B PTE → 2^20 × 4B = 4MB. 프로세스 100개면 400MB. 문제는 대부분의 가상 공간이 비어 있는데도 테이블이 그 전체를 커버한다는 점.',
     problem: 'invalid entry가 대량으로 존재 — 공간이 그냥 버려진다.',
     to: { chapter: '14-smaller-tables' },
+    image: { src: '/figures/ch14-linear-pt.png', alt: '선형 page table 크기 계산 (4MB/프로세스)' },
   },
   {
     id: 'bigger-page',
@@ -571,6 +608,7 @@ export const memoryChain: EvolutionNode[] = [
     problem:
       '세그먼트 내부는 여전히 선형 page table. 힙이 희소하게 쓰이면 invalid entry는 여전히 쌓인다.',
     to: { chapter: '14-smaller-tables' },
+    image: { src: '/figures/ch14-hybrid.png', alt: 'Hybrid — 세그먼트별 page table 주소 포맷' },
   },
   {
     id: 'two-level',
@@ -586,6 +624,7 @@ export const memoryChain: EvolutionNode[] = [
     advantage: '실제로 쓰는 영역에 비례해서만 공간 소비 → sparse 주소공간에 최적.',
     problem: 'TLB miss 시 메모리 접근이 1회 → 2회로 늘어난다.',
     to: { chapter: '14-smaller-tables', anchor: 'multi-level-page-table' },
+    image: { src: '/figures/ch14-two-level.png', alt: '선형 page table vs 2단계 page table 비교' },
   },
   {
     id: 'deeper-levels',
@@ -599,6 +638,7 @@ export const memoryChain: EvolutionNode[] = [
     ],
     problem: '단계가 깊어질수록 TLB miss 시 메모리 접근 횟수가 비례해서 늘어난다.',
     to: { chapter: '14-smaller-tables' },
+    image: { src: '/figures/ch14-multilevel.png', alt: '3단계 이상의 깊은 계층 page table' },
   },
   {
     id: 'time-space',

@@ -337,3 +337,26 @@ export const meta = style({
   color: vars.color.textFaint,
   fontStyle: 'italic',
 });
+
+export const figure = style({
+  margin: `${vars.space[5]} 0 ${vars.space[6]}`,
+  padding: vars.space[3],
+  background: vars.color.surfaceAlt,
+  border: `1px solid ${vars.color.border}`,
+  borderRadius: vars.radius.md,
+});
+
+export const figureImg = style({
+  display: 'block',
+  width: '100%',
+  height: 'auto',
+  borderRadius: vars.radius.sm,
+});
+
+export const figureCaption = style({
+  marginTop: vars.space[2],
+  fontSize: vars.fontSize.xs,
+  color: vars.color.textMuted,
+  textAlign: 'center',
+  fontStyle: 'italic',
+});
