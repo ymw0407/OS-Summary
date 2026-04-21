@@ -54,12 +54,22 @@ export const flowCol = style({
   alignSelf: 'start',
   maxHeight: `calc(100vh - ${vars.size.header} - ${vars.space[6]})`,
   overflowY: 'auto',
-  padding: `${vars.space[3]} ${vars.space[2]}`,
+  // 위/아래로 충분한 여백을 둬서 마지막 노드가 스크롤 경계에 딱 붙어
+  // 잘려 보이는 느낌을 없앤다.
+  padding: `${vars.space[5]} ${vars.space[3]} ${vars.space[6]}`,
   scrollBehavior: 'smooth',
+  // 스크롤 가능한 영역 위/아래에 subtle 한 fade mask 를 적용해,
+  // 노드가 스크롤 경계에서 "짤려 보이는" 느낌을 줄인다.
+  maskImage:
+    'linear-gradient(to bottom, transparent 0, black 20px, black calc(100% - 20px), transparent 100%)',
+  WebkitMaskImage:
+    'linear-gradient(to bottom, transparent 0, black 20px, black calc(100% - 20px), transparent 100%)',
   '@media': {
     '(max-width: 900px)': {
       position: 'static',
       maxHeight: 'none',
+      maskImage: 'none',
+      WebkitMaskImage: 'none',
     },
   },
 });
@@ -90,13 +100,18 @@ export const flowList = style({
 
 export const node = style({
   position: 'relative',
-  display: 'block',
+  display: 'flex',
+  flexDirection: 'column',
+  justifyContent: 'center',
   width: '100%',
+  // 텍스트 양이 적은 노드도 비어 보이지 않도록 최소 높이를 둔다.
+  minHeight: '84px',
   textAlign: 'left',
   background: vars.color.surface,
   border: `1px solid ${vars.color.border}`,
   borderRadius: vars.radius.md,
-  padding: `${vars.space[3]} ${vars.space[4]} ${vars.space[3]} ${vars.space[5]}`,
+  // 수직 padding 을 키워 카드가 더 "잡히는" 느낌을 주고, 좌측 accent bar 공간도 확보.
+  padding: `${vars.space[4]} ${vars.space[4]} ${vars.space[4]} ${vars.space[5]}`,
   cursor: 'pointer',
   transition: 'transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease, background 0.12s ease',
   color: vars.color.text,
@@ -358,5 +373,15 @@ export const figureCaption = style({
   fontSize: vars.fontSize.xs,
   color: vars.color.textMuted,
   textAlign: 'center',
+  fontStyle: 'italic',
+});
+
+export const figurePlaceholder = style({
+  padding: `${vars.space[8]} ${vars.space[4]}`,
+  border: `1px dashed ${vars.color.borderStrong}`,
+  borderRadius: vars.radius.md,
+  color: vars.color.textFaint,
+  textAlign: 'center',
+  fontSize: vars.fontSize.sm,
   fontStyle: 'italic',
 });

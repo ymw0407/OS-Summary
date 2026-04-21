@@ -10,6 +10,8 @@ export type EvolutionNode = {
   to: { chapter: string; anchor?: string };
   // 본문 PDF 에서 크롭한 figure. public/figures/ 기준의 경로.
   image?: { src: string; alt?: string };
+  // 여러 장을 붙이고 싶을 때 — image 뒤에 순서대로 표시.
+  extraImages?: Array<{ src: string; alt?: string }>;
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -118,6 +120,12 @@ export const schedulerChain: EvolutionNode[] = [
       '세 가지 함정: (1) Starvation — 상위 큐가 붐비면 하위가 굶음, (2) Gaming — time slice 직전에 I/O 던져 강등 회피, (3) Behavior change — 작업 성격이 바뀔 때 대응 못함.',
     to: { chapter: '05-mlfq', anchor: 'mlfq' },
     image: { src: '/figures/ch05-mlfq-queues.png', alt: 'MLFQ 다단계 큐 구조' },
+    extraImages: [
+      {
+        src: '/figures/ch05-mlfq-starvation.png',
+        alt: '기본 규칙만 썼을 때의 Starvation — 한 큐가 CPU 를 독점',
+      },
+    ],
   },
   {
     id: 'priority-boost',
@@ -129,6 +137,12 @@ export const schedulerChain: EvolutionNode[] = [
     problem: 'Gaming 문제는 여전히 남는다.',
     to: { chapter: '05-mlfq' },
     image: { src: '/figures/ch05-mlfq-boost.png', alt: 'Priority Boost 적용 전/후 비교' },
+    extraImages: [
+      {
+        src: '/figures/ch05-mlfq-boost-s50.png',
+        alt: 'S=50 마다 모든 작업을 최상위 큐로 끌어올리는 Priority Boost 타임라인',
+      },
+    ],
   },
   {
     id: 'better-accounting',
@@ -300,6 +314,12 @@ export const memoryChain: EvolutionNode[] = [
     problem: '여러 프로그램을 동시에 돌리기 시작하면 서로의 메모리를 침범할 수 있다.',
     to: { chapter: '08-address-space', anchor: 'address-space' },
     image: { src: '/figures/ch08-single-process.png', alt: 'OS + 단일 프로그램 메모리 레이아웃' },
+    extraImages: [
+      {
+        src: '/figures/ch08-memory-simple.png',
+        alt: '주소 공간 기본 구성 — kernel / stack / heap / data / code',
+      },
+    ],
   },
   {
     id: 'multiprogramming',
@@ -329,6 +349,16 @@ export const memoryChain: EvolutionNode[] = [
     problem: '어떻게 이 가상 주소를 물리 주소로 빠르게 변환할 것인가?',
     to: { chapter: '08-address-space', anchor: 'address-space' },
     image: { src: '/figures/ch08-address-space.png', alt: 'code / heap / stack 가상 주소 공간 레이아웃' },
+    extraImages: [
+      {
+        src: '/figures/ch08-memory-simple.png',
+        alt: '단순화된 레이아웃 — kernel / stack / heap / data / code',
+      },
+      {
+        src: '/figures/ch08-process-address-space.png',
+        alt: '리눅스 3G user + 1G kernel 주소 공간 상세 구조',
+      },
+    ],
   },
 
   // Phase 3: 연속 재배치
@@ -444,6 +474,12 @@ export const memoryChain: EvolutionNode[] = [
     problem: '어떤 chunk를 고를 것인가? 정책이 필요.',
     to: { chapter: '11-free-space-management' },
     image: { src: '/figures/ch11-free-list.png', alt: 'heap + free list (head → node → NULL)' },
+    extraImages: [
+      {
+        src: '/figures/ch11-free-alloc-dealloc.png',
+        alt: '128B heap — allocation 4회 후 deallocation(5~8) 시 빈틈이 생기는 과정',
+      },
+    ],
   },
   {
     id: 'fit-policies',
@@ -460,6 +496,12 @@ export const memoryChain: EvolutionNode[] = [
     problem: '그래도 가변 크기 할당의 근본 단편화는 남는다.',
     to: { chapter: '11-free-space-management' },
     image: { src: '/figures/ch11-fit-policies.png', alt: 'best-fit vs worst-fit 결과 비교' },
+    extraImages: [
+      {
+        src: '/figures/ch11-free-alloc-basic.png',
+        alt: '요청 크기에 따른 splitting — 128B heap 기본 할당 시퀀스',
+      },
+    ],
   },
   {
     id: 'segregated-list',
@@ -483,6 +525,16 @@ export const memoryChain: EvolutionNode[] = [
       '2의 거듭제곱 단위라 33B 요청에 64B 할당 → Internal Fragmentation. 그리고 가변 크기라는 근본 한계는 여전히 남는다.',
     to: { chapter: '11-free-space-management' },
     image: { src: '/figures/ch11-buddy-split.png', alt: 'Buddy System — 반씩 분할' },
+    extraImages: [
+      {
+        src: '/figures/ch11-buddy-in-action.png',
+        alt: 'Buddy System 동작 — freelist · 블록 배치 · bitmap 연동',
+      },
+      {
+        src: '/figures/ch11-internal-fragmentation.png',
+        alt: 'Internal Fragmentation — Assigned Space 중 Used Space 만 실제 사용',
+      },
+    ],
   },
 
   // Phase 6: 고정 크기 패러다임
@@ -575,6 +627,12 @@ export const memoryChain: EvolutionNode[] = [
     problem: 'TLB가 있어 빠르긴 한데, page table 자체의 크기 문제는 그대로 남아 있다.',
     to: { chapter: '13-tlb' },
     image: { src: '/figures/ch13-tlb-lru.png', alt: 'TLB LRU replacement' },
+    extraImages: [
+      {
+        src: '/figures/ch13-lru-korean.png',
+        alt: 'LRU 교체 예 — 참조 페이지 번호 시퀀스와 page fault / 교체 지점',
+      },
+    ],
   },
 
   // Phase 8: 테이블 공간 줄이기

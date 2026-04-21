@@ -3,6 +3,31 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import type { EvolutionNode } from '../../pages/evolution-data';
 import * as s from './EvolutionFlow.css';
 
+// 이미지 로드 실패 시 플레이스홀더로 대체. public/figures/ 에 아직 파일이
+// 없을 때 브라우저의 깨진 이미지 아이콘이 뜨는 대신 친절한 문구를 보여 준다.
+function ResilientFigure({ src, alt }: { src: string; alt?: string }) {
+  const [failed, setFailed] = useState(false);
+  const resolved = resolveFigure(src);
+  return (
+    <figure className={s.figure}>
+      {failed ? (
+        <div className={s.figurePlaceholder}>
+          {alt ?? '이미지 준비 중'} (public/figures/ 에 파일이 없습니다)
+        </div>
+      ) : (
+        <img
+          className={s.figureImg}
+          src={resolved}
+          alt={alt ?? ''}
+          loading="lazy"
+          onError={() => setFailed(true)}
+        />
+      )}
+      {alt && <figcaption className={s.figureCaption}>{alt}</figcaption>}
+    </figure>
+  );
+}
+
 function readInitialNode(search: string, fallback: string): string {
   try {
     return new URLSearchParams(search).get('node') ?? fallback;
@@ -143,18 +168,11 @@ export function EvolutionFlow({
             <p className={s.detailTagline}>{active.tagline}</p>
 
             {active.image && (
-              <figure className={s.figure}>
-                <img
-                  className={s.figureImg}
-                  src={resolveFigure(active.image.src)}
-                  alt={active.image.alt ?? active.title}
-                  loading="lazy"
-                />
-                {active.image.alt && (
-                  <figcaption className={s.figureCaption}>{active.image.alt}</figcaption>
-                )}
-              </figure>
+              <ResilientFigure src={active.image.src} alt={active.image.alt} />
             )}
+            {active.extraImages?.map((img, i) => (
+              <ResilientFigure key={i} src={img.src} alt={img.alt} />
+            ))}
 
             <section className={s.section}>
               <div className={`${s.sectionLabel} ${s.sectionIdea}`}>핵심 아이디어</div>
