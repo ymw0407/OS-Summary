@@ -459,6 +459,274 @@ export function ThreadMemoryMap({ caption }: { caption?: string }) {
 }
 
 // ────────────────────────────────────────────────────────────────────────────
+// 2-c. Address space layout — 가상 주소 공간의 위쪽엔 kernel space,
+//      그 아래에 stack 1/2/3 가 흩어져 있고, 맨 아래는 code/data/heap.
+//      thread들이 어디에 자리잡고 있는지를 "주소 공간 그림"으로 보여준다.
+// ────────────────────────────────────────────────────────────────────────────
+export function AddressSpaceLayout({ caption }: { caption?: string }) {
+  const W = 760;
+  const H = 660;
+
+  // 왼쪽 컬럼 = 가상 주소 공간 그림
+  const colX = 60;
+  const colW = 300;
+
+  // 위에서부터: kernel → stack1 → free → stack2 → free → stack3 → free → heap↑ → data → code → 0
+  const rows: Array<{
+    h: number;
+    label: string;
+    sub?: string;
+    tone: BoxTone;
+    addrLabel?: string;
+    isFree?: boolean;
+    isHeap?: boolean;
+    italic?: boolean;
+  }> = [
+    { h: 150, label: 'Kernel Space', sub: '(kernel mode에서만 접근 가능)', tone: 'muted', addrLabel: '0xFFFF…' },
+    { h: 42, label: 'Stack 1', sub: '(Thread 1 user stack)', tone: 'solution', addrLabel: 'high' },
+    { h: 28, label: '(free)', tone: 'plain', isFree: true },
+    { h: 42, label: 'Stack 2', sub: '(Thread 2 user stack)', tone: 'limitation' },
+    { h: 28, label: '(free)', tone: 'plain', isFree: true },
+    { h: 42, label: 'Stack 3', sub: '(Thread 3 user stack)', tone: 'problem' },
+    { h: 36, label: '(free) — 모든 stack은 위→아래로 자람 ↓', tone: 'plain', isFree: true, italic: true },
+    { h: 56, label: 'Heap', sub: 'malloc, dynamic data ↑ (위로 자람)', tone: 'accent', isHeap: true },
+    { h: 28, label: 'Data', sub: 'global / static', tone: 'accent' },
+    { h: 28, label: 'Code', sub: 'instructions', tone: 'accent', addrLabel: '0x0000' },
+  ];
+
+  const startY = 60;
+  let cursorY = startY;
+  const rowsWithPos = rows.map((r) => {
+    const y = cursorY;
+    cursorY += r.h;
+    return { ...r, y };
+  });
+  const totalEndY = cursorY;
+
+  // 오른쪽 설명 영역
+  const annoX = 410;
+
+  return (
+    <Diagram caption={caption}>
+      <svg className={s.svg} viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Address space layout with 3 threads and kernel space">
+        <ArrowDefs />
+
+        {/* 컬럼 헤더 */}
+        <text x={colX + colW / 2} y={36} textAnchor="middle" fontSize={13} fontFamily={vars.font.sans} fontWeight={700} fill={vars.color.text}>
+          한 process의 가상 주소 공간
+        </text>
+        <text x={colX + colW / 2} y={52} textAnchor="middle" fontSize={10.5} fontFamily={vars.font.sans} fill={vars.color.textMuted}>
+          (위쪽 = high address, 아래쪽 = 0x0000)
+        </text>
+
+        {/* address 축 */}
+        <line x1={colX - 14} y1={startY} x2={colX - 14} y2={totalEndY} stroke={vars.color.border} strokeWidth={1} />
+
+        {/* 각 row 그리기 */}
+        {rowsWithPos.map((r, i) => {
+          // kernel space 내부에는 PCB / TCB / kernel stack 박스를 따로 그린다.
+          if (r.label === 'Kernel Space') {
+            return (
+              <g key={i}>
+                <BoxBg x={colX} y={r.y} w={colW} h={r.h} tone="muted" />
+                <text x={colX + 12} y={r.y + 18} fontSize={12} fontFamily={vars.font.sans} fontWeight={700} fill={vars.color.text}>
+                  Kernel Space
+                </text>
+                <text x={colX + 12} y={r.y + 34} fontSize={10} fontFamily={vars.font.sans} fill={vars.color.textMuted}>
+                  (모든 process가 같은 kernel 영역을 봄)
+                </text>
+
+                {/* PCB */}
+                <BoxBg x={colX + 12} y={r.y + 44} w={colW - 24} h={26} tone="accent" />
+                <text x={colX + colW / 2} y={r.y + 44 + 18} textAnchor="middle" fontSize={11.5} fontFamily={vars.font.mono} fontWeight={700} fill={vars.color.accent}>
+                  PCB (이 process 1개)
+                </text>
+
+                {/* TCB row × 3 */}
+                {[0, 1, 2].map((ti) => {
+                  const tone: BoxTone = ti === 0 ? 'solution' : ti === 1 ? 'limitation' : 'problem';
+                  const tcbW = (colW - 24 - 8 * 2) / 3;
+                  const tx = colX + 12 + ti * (tcbW + 8);
+                  return (
+                    <g key={`tcb-${ti}`}>
+                      <BoxBg x={tx} y={r.y + 76} w={tcbW} h={20} tone={tone} />
+                      <text x={tx + tcbW / 2} y={r.y + 76 + 14} textAnchor="middle" fontSize={10} fontFamily={vars.font.mono} fontWeight={700} fill={toneTextColor(tone)}>
+                        TCB {ti + 1}
+                      </text>
+                    </g>
+                  );
+                })}
+
+                {/* kernel stack row × 3 */}
+                {[0, 1, 2].map((ti) => {
+                  const tone: BoxTone = ti === 0 ? 'solution' : ti === 1 ? 'limitation' : 'problem';
+                  const tcbW = (colW - 24 - 8 * 2) / 3;
+                  const tx = colX + 12 + ti * (tcbW + 8);
+                  return (
+                    <g key={`kstk-${ti}`}>
+                      <BoxBg x={tx} y={r.y + 100} w={tcbW} h={20} tone={tone} />
+                      <text x={tx + tcbW / 2} y={r.y + 100 + 14} textAnchor="middle" fontSize={10} fontFamily={vars.font.mono} fontWeight={700} fill={toneTextColor(tone)}>
+                        kstack {ti + 1}
+                      </text>
+                    </g>
+                  );
+                })}
+
+                {/* addr label on left */}
+                <text x={colX - 20} y={r.y + 14} textAnchor="end" fontSize={10} fontFamily={vars.font.mono} fill={vars.color.textMuted}>
+                  0xFFFF…
+                </text>
+                <text x={colX - 20} y={r.y + r.h - 4} textAnchor="end" fontSize={10} fontFamily={vars.font.mono} fill={vars.color.textMuted}>
+                  kernel base
+                </text>
+              </g>
+            );
+          }
+
+          // 일반 row
+          return (
+            <g key={i}>
+              <BoxBg x={colX} y={r.y} w={colW} h={r.h} tone={r.tone} />
+              <text
+                x={colX + 14}
+                y={r.y + r.h / 2 + (r.sub ? -2 : 4)}
+                fontSize={12.5}
+                fontFamily={vars.font.mono}
+                fontWeight={r.isFree ? 400 : 700}
+                fontStyle={r.italic ? 'italic' : 'normal'}
+                fill={r.isFree ? vars.color.textMuted : toneTextColor(r.tone)}
+              >
+                {r.label}
+              </text>
+              {r.sub && (
+                <text
+                  x={colX + 14}
+                  y={r.y + r.h / 2 + 14}
+                  fontSize={10.5}
+                  fontFamily={vars.font.sans}
+                  fontStyle="italic"
+                  fill={vars.color.textMuted}
+                >
+                  {r.sub}
+                </text>
+              )}
+              {/* heap growth arrow */}
+              {r.isHeap && (
+                <line
+                  x1={colX + colW - 22}
+                  y1={r.y + r.h - 8}
+                  x2={colX + colW - 22}
+                  y2={r.y + 8}
+                  stroke={vars.color.accent}
+                  strokeWidth={1.4}
+                  markerEnd="url(#ch17-arrow-default)"
+                />
+              )}
+              {r.addrLabel && (
+                <text x={colX - 20} y={r.y + 12} textAnchor="end" fontSize={10} fontFamily={vars.font.mono} fill={vars.color.textMuted}>
+                  {r.addrLabel}
+                </text>
+              )}
+            </g>
+          );
+        })}
+
+        {/* 0x0000 마크 */}
+        <text x={colX - 20} y={totalEndY + 12} textAnchor="end" fontSize={10} fontFamily={vars.font.mono} fontWeight={700} fill={vars.color.textMuted}>
+          0x0000
+        </text>
+
+        {/* ── 오른쪽 설명 ── */}
+        {/* 큰 묶음 1: User vs Kernel */}
+        <text x={annoX} y={62} fontSize={12.5} fontFamily={vars.font.sans} fontWeight={700} fill={vars.color.text}>
+          ① User space (하단부) vs Kernel space (상단부)
+        </text>
+        <text x={annoX} y={80} fontSize={11} fontFamily={vars.font.sans} fill={vars.color.textMuted}>
+          · 한 가상 주소 공간 안에서 위쪽은 kernel만 접근 가능.
+        </text>
+        <text x={annoX} y={96} fontSize={11} fontFamily={vars.font.sans} fill={vars.color.textMuted}>
+          · 같은 process의 모든 thread는 이 그림 한 장을 공유한다.
+        </text>
+
+        {/* 묶음 2: thread stacks */}
+        <text x={annoX} y={140} fontSize={12.5} fontFamily={vars.font.sans} fontWeight={700} fill={vars.color.text}>
+          ② Thread별 user stack은 별도 위치에 박힘
+        </text>
+        <text x={annoX} y={158} fontSize={11} fontFamily={vars.font.sans} fill={vars.color.textMuted}>
+          · Stack 1·2·3 사이 (free) 공백은 서로 침범하지 않도록
+        </text>
+        <text x={annoX} y={172} fontSize={11} fontFamily={vars.font.sans} fill={vars.color.textMuted}>
+          &nbsp;&nbsp;guard page를 두는 흔적.
+        </text>
+        <text x={annoX} y={188} fontSize={11} fontFamily={vars.font.sans} fill={vars.color.textMuted}>
+          · 같은 thread의 user stack ↔ kernel stack은 짝꿍.
+        </text>
+
+        {/* 묶음 3: shared regions */}
+        <text x={annoX} y={232} fontSize={12.5} fontFamily={vars.font.sans} fontWeight={700} fill={vars.color.text}>
+          ③ code · data · heap 은 한 덩어리, 모두가 공유
+        </text>
+        <text x={annoX} y={250} fontSize={11} fontFamily={vars.font.sans} fill={vars.color.textMuted}>
+          · global 변수, malloc된 데이터를 thread끼리
+        </text>
+        <text x={annoX} y={264} fontSize={11} fontFamily={vars.font.sans} fill={vars.color.textMuted}>
+          &nbsp;&nbsp;직접 읽고 쓸 수 있는 이유.
+        </text>
+        <text x={annoX} y={280} fontSize={11} fontFamily={vars.font.sans} fill={vars.color.textMuted}>
+          · race condition이 발생하는 영역도 바로 여기.
+        </text>
+
+        {/* 묶음 4: kernel-space breakdown */}
+        <text x={annoX} y={324} fontSize={12.5} fontFamily={vars.font.sans} fontWeight={700} fill={vars.color.text}>
+          ④ Kernel space 안쪽 (이 process 몫)
+        </text>
+        <text x={annoX} y={342} fontSize={11} fontFamily={vars.font.sans} fill={vars.color.textMuted}>
+          · PCB 1개 — process 단위 정보 (PID, page table base,
+        </text>
+        <text x={annoX} y={356} fontSize={11} fontFamily={vars.font.sans} fill={vars.color.textMuted}>
+          &nbsp;&nbsp;FD table, signals …)
+        </text>
+        <text x={annoX} y={372} fontSize={11} fontFamily={vars.font.sans} fill={vars.color.textMuted}>
+          · TCB / kstack은 thread 수만큼 — 같은 색끼리 묶임.
+        </text>
+        <text x={annoX} y={388} fontSize={11} fontFamily={vars.font.sans} fill={vars.color.textMuted}>
+          · trap 발생 시 해당 thread의 kstack 위에서 실행 시작.
+        </text>
+
+        {/* 묶음 5: 색 범례 */}
+        <text x={annoX} y={432} fontSize={12.5} fontFamily={vars.font.sans} fontWeight={700} fill={vars.color.text}>
+          ⑤ 색이 같으면 같은 thread의 것
+        </text>
+        <g transform={`translate(${annoX}, 450)`}>
+          <rect x={0} y={0} width={14} height={14} rx={3} fill={toneBg('solution')} stroke={toneStroke('solution')} />
+          <text x={22} y={11} fontSize={11} fontFamily={vars.font.sans} fill={vars.color.text}>
+            Thread 1 — Stack 1 / TCB 1 / kstack 1
+          </text>
+        </g>
+        <g transform={`translate(${annoX}, 472)`}>
+          <rect x={0} y={0} width={14} height={14} rx={3} fill={toneBg('limitation')} stroke={toneStroke('limitation')} />
+          <text x={22} y={11} fontSize={11} fontFamily={vars.font.sans} fill={vars.color.text}>
+            Thread 2 — Stack 2 / TCB 2 / kstack 2
+          </text>
+        </g>
+        <g transform={`translate(${annoX}, 494)`}>
+          <rect x={0} y={0} width={14} height={14} rx={3} fill={toneBg('problem')} stroke={toneStroke('problem')} />
+          <text x={22} y={11} fontSize={11} fontFamily={vars.font.sans} fill={vars.color.text}>
+            Thread 3 — Stack 3 / TCB 3 / kstack 3
+          </text>
+        </g>
+        <g transform={`translate(${annoX}, 516)`}>
+          <rect x={0} y={0} width={14} height={14} rx={3} fill={toneBg('accent')} stroke={toneStroke('accent')} />
+          <text x={22} y={11} fontSize={11} fontFamily={vars.font.sans} fill={vars.color.text}>
+            모두 공유 — code / data / heap / PCB
+          </text>
+        </g>
+      </svg>
+    </Diagram>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────────────
 // 3. Multicore parallelism — single vs multi-thread on multi-core
 // ────────────────────────────────────────────────────────────────────────────
 export function MulticoreParallelism({ caption }: { caption?: string }) {
