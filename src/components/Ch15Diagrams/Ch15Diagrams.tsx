@@ -838,7 +838,169 @@ export function PageDaemonScenarios({ caption }: { caption?: string }) {
 }
 
 // ────────────────────────────────────────────────────────────────────────────
-// 13. 전체 흐름 13단계
+// 13. PFN 재할당 — 같은 VPN의 PFN이 swap out/in 후에 바뀌는 모습
+// ────────────────────────────────────────────────────────────────────────────
+export function PfnReassignment({ caption }: { caption?: string }) {
+  // 세 시점의 같은 VPN 2 매핑 상태
+  const rows: Array<{
+    label: string;
+    vpn: string;
+    arrow: string;
+    target: string;
+    targetSub: string;
+    tone: BoxTone;
+    targetTone: BoxTone;
+    note: string;
+  }> = [
+    {
+      label: 't1',
+      vpn: 'VPN 2',
+      arrow: '→',
+      target: 'PFN 5',
+      targetSub: 'present = 1',
+      tone: 'plain',
+      targetTone: 'solution',
+      note: 'DRAM에 적재됨',
+    },
+    {
+      label: 't2',
+      vpn: 'VPN 2',
+      arrow: '→',
+      target: 'disk block 10',
+      targetSub: 'present = 0',
+      tone: 'plain',
+      targetTone: 'limitation',
+      note: 'swap out — PFN 5는 다른 page가 차지',
+    },
+    {
+      label: 't3',
+      vpn: 'VPN 2',
+      arrow: '→',
+      target: 'PFN 8',
+      targetSub: 'present = 1',
+      tone: 'plain',
+      targetTone: 'solution',
+      note: 'swap in — 이전과 다른 PFN로 복귀',
+    },
+  ];
+
+  const W = 720;
+  const rowH = 72;
+  const rowGap = 28;
+  const startX = 30;
+  const startY = 24;
+
+  // 한 줄 구성요소 폭
+  const labelW = 50;
+  const vpnW = 110;
+  const arrowW = 32;
+  const targetW = 200;
+  const noteX = startX + labelW + 12 + vpnW + arrowW + targetW + 24;
+
+  const H = startY + rows.length * (rowH + rowGap) - rowGap + 20;
+
+  return (
+    <Diagram caption={caption}>
+      <svg className={s.svg} viewBox={`0 0 ${W} ${H}`} role="img" aria-label="PFN reassignment across swap out and swap in">
+        <ArrowDefs />
+        {rows.map((r, i) => {
+          const y = startY + i * (rowH + rowGap);
+          const vpnX = startX + labelW + 12;
+          const arrowStartX = vpnX + vpnW;
+          const arrowEndX = arrowStartX + arrowW;
+          const targetX = arrowEndX;
+
+          return (
+            <g key={i}>
+              {/* 시점 라벨 (t1, t2, t3) */}
+              <text
+                x={startX + labelW / 2}
+                y={y + rowH / 2 + 4}
+                textAnchor="middle"
+                fontSize={14}
+                fontFamily={vars.font.mono}
+                fontWeight={700}
+                fill={vars.color.textMuted}
+              >
+                {r.label}
+              </text>
+
+              {/* VPN 박스 */}
+              <Box x={vpnX} y={y} w={vpnW} h={rowH} tone={r.tone} label={r.vpn} bold />
+
+              {/* 화살표 */}
+              <Arrow x1={arrowStartX + 4} y1={y + rowH / 2} x2={arrowEndX - 4} y2={y + rowH / 2} />
+
+              {/* Target 박스 (PFN 또는 disk block) */}
+              <BoxBg x={targetX} y={y} w={targetW} h={rowH} tone={r.targetTone} />
+              <text
+                x={targetX + targetW / 2}
+                y={y + rowH / 2 - 4}
+                textAnchor="middle"
+                fontSize={15}
+                fontFamily={vars.font.mono}
+                fontWeight={700}
+                fill={toneTextColor(r.targetTone)}
+              >
+                {r.target}
+              </text>
+              <text
+                x={targetX + targetW / 2}
+                y={y + rowH / 2 + 16}
+                textAnchor="middle"
+                fontSize={11}
+                fontFamily={vars.font.mono}
+                fill={vars.color.textMuted}
+              >
+                {r.targetSub}
+              </text>
+
+              {/* 우측 설명 */}
+              <text
+                x={noteX}
+                y={y + rowH / 2 + 4}
+                fontSize={12}
+                fontFamily={vars.font.sans}
+                fontStyle="italic"
+                fill={vars.color.textMuted}
+              >
+                {r.note}
+              </text>
+
+              {/* 시점 간 전이 화살표 (행 사이) */}
+              {i < rows.length - 1 && (
+                <g>
+                  <path
+                    d={`M ${targetX + targetW / 2} ${y + rowH + 2}
+                        L ${targetX + targetW / 2} ${y + rowH + rowGap - 2}`}
+                    stroke={vars.color.evoArrow}
+                    strokeWidth={1.4}
+                    fill="none"
+                    markerEnd="url(#arrow-default)"
+                    strokeDasharray="4 4"
+                  />
+                  <text
+                    x={targetX + targetW / 2 + 10}
+                    y={y + rowH + rowGap / 2 + 4}
+                    fontSize={11.5}
+                    fontFamily={vars.font.sans}
+                    fontStyle="italic"
+                    fill={vars.color.textMuted}
+                  >
+                    {i === 0 ? 'swap out' : 'swap in'}
+                  </text>
+                </g>
+              )}
+            </g>
+          );
+        })}
+      </svg>
+    </Diagram>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// 14. 전체 흐름 13단계
 // ────────────────────────────────────────────────────────────────────────────
 export function FullFlowSteps({ caption }: { caption?: string }) {
   const steps: Array<{ text: string; tone: BoxTone; mark?: string }> = [

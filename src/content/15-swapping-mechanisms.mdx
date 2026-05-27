@@ -348,6 +348,20 @@ DiskRead(PTE.DiskAddr, PFN);
 </Callout>
 
 
+## PFN은 고정되지 않는다
+
+페이지가 swap out되면 그 page가 차지하던 physical frame은 비게 되고, **다른 page가 그 frame을 쓸 수 있다**. 따라서 같은 VPN이 나중에 swap in될 때 **이전과 같은 PFN으로 돌아온다는 보장이 없다**. page fault handler가 `PTE.PFN = PFN` 으로 갱신하는 이유가 바로 이것이다.
+
+<PfnReassignment caption="같은 VPN 2가 시간에 따라 PFN 5 → disk block 10 → PFN 8 로 바뀐다. swap out이 일어나면 PTE의 PFN 자리는 disk address로 의미가 바뀌고, swap in 시점에는 새로 확보된 PFN으로 덮어쓴다." />
+
+<Callout kind="note" title="present 상태에 따라 PTE 필드의 의미가 바뀐다">
+- <code>present = 1</code> → <b>PFN</b>을 보고 DRAM에 접근
+- <code>present = 0</code> → <b>disk address</b>를 보고 swap space에 접근
+</Callout>
+
+그래서 OS 입장에서는 “이 VPN의 PFN을 그대로 다시 쓸 수 있나?”를 가정하면 안 되고, swap in 때마다 free frame을 새로 확보해서 PTE를 갱신해야 한다. 이 갱신을 까먹으면 다음 접근에서 잘못된 physical address로 가게 된다.
+
+
 ## Swapping과 TLB의 연결
 
 TLB는 최근 사용한 VPN → PFN 변환을 저장하는 캐시다. 그런데 어떤 page가 swap out되어 disk로 나가면, **그 page의 기존 PFN 매핑은 더 이상 유효하지 않다**.

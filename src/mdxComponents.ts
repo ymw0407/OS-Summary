@@ -15,6 +15,7 @@ import {
   TlbHitMissFlow,
   SystemComponentPipeline,
   PageDaemonScenarios,
+  PfnReassignment,
   FullFlowSteps,
 } from './components/Ch15Diagrams/Ch15Diagrams';
 
@@ -38,5 +39,6 @@ export const mdxComponents = {
   TlbHitMissFlow,
   SystemComponentPipeline,
   PageDaemonScenarios,
+  PfnReassignment,
   FullFlowSteps,
 } as unknown as Record<string, React.ComponentType<unknown>>;
