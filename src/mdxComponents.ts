@@ -18,6 +18,17 @@ import {
   PfnReassignment,
   FullFlowSteps,
 } from './components/Ch15Diagrams/Ch15Diagrams';
+import {
+  CpuVirtTimeline,
+  ThreadAnatomy,
+  MulticoreParallelism,
+  IOOverlapTimeline,
+  IpcVsThreadSharing,
+  RaceConditionTimeline,
+  LockCriticalSection,
+  DeadlockCycle,
+  ThreadVsProcessSwitchDiagram,
+} from './components/Ch17Diagrams/Ch17Diagrams';
 
 // MDXProvider accepts a loose components map; casting via `unknown` keeps it flexible
 // without pulling in MDX's generic component types.
@@ -41,4 +52,14 @@ export const mdxComponents = {
   PageDaemonScenarios,
   PfnReassignment,
   FullFlowSteps,
+  // 17장(Threads & Concurrency) 전용 SVG 다이어그램들.
+  CpuVirtTimeline,
+  ThreadAnatomy,
+  MulticoreParallelism,
+  IOOverlapTimeline,
+  IpcVsThreadSharing,
+  RaceConditionTimeline,
+  LockCriticalSection,
+  DeadlockCycle,
+  ThreadVsProcessSwitchDiagram,
 } as unknown as Record<string, React.ComponentType<unknown>>;

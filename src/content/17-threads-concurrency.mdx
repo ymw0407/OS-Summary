@@ -9,14 +9,8 @@
 
 이전까지는 CPU virtualization을 배웠다. 하나의 CPU가 있어도 OS가 **context switching과 scheduling** 을 잘 수행하면 여러 프로세스가 동시에 실행되는 것처럼 보인다.
 
-```txt
-Process A 실행
-  → timer interrupt
-  → context switch
-  → Process B 실행
-  → 다시 context switch
-  → Process A 실행
-```
+<CpuVirtTimeline caption="하나의 CPU 위에서 Process A와 B가 timer interrupt에 의해 번갈아 실행된다 — concurrency의 환상." />
+
 
 이 방식은 여러 프로세스가 각각 **독립된 주소 공간** 을 가지고 번갈아 실행되는 구조이다.
 
@@ -38,12 +32,7 @@ Process A 실행
 
 프로세스가 하나의 주소 공간을 가진 실행 단위라면, thread는 **그 프로세스 안에서 실제로 코드를 실행하는 흐름** 이라고 볼 수 있다.
 
-```txt
-Process
-├── Thread 1
-├── Thread 2
-└── Thread 3
-```
+<ThreadAnatomy caption="하나의 프로세스 안에 shared region(code/data/heap/FD/AS)이 있고, 그 아래 각 thread마다 PC·SP·registers·stack이 별도로 매달려 있다." />
 
 각 thread는 같은 프로세스 안에 있으므로 **code, data, heap, file descriptor table, address space를 공유** 한다. 하지만 각 thread는 서로 다른 실행 흐름이므로 **PC, SP, register state, stack은 따로 가져야** 한다.
 
@@ -248,19 +237,13 @@ PID
 같은 프로세스의 thread는 page table을 공유하므로 기존 <b>TLB entry가 그대로 유효</b>하다. 반면 process가 바뀌면 page table이 통째로 바뀌므로 기존 TLB entry는 더이상 유효하지 않다 (TLB flush 필요). 이를 완화하기 위해 13장에서 본 <b>ASID</b> 가 활용된다.
 </Callout>
 
+<ThreadVsProcessSwitchDiagram caption="좌(Thread switch)와 우(Process switch)를 한눈에 비교. Page table base / FD table / TLB는 thread switch에서는 그대로지만 process switch에서는 전부 바뀐다." />
+
 <Figure
   src="/figures/ch17-thread-vs-process-switch.png"
-  caption="Thread switch vs Process switch — Kernel SP 교체는 둘 다 일어나지만 Page table base 교체와 TLB 영향은 process switch에서만 발생한다."
+  caption="원본 PDF의 비교표 — 동일한 항목을 O/X 형태로 표시."
   source="OSTEP 17_Concurrency_Intro 강의자료 (p.5)"
 />
-
-| 단계 | Thread Switch (같은 process) | Process Switch |
-| :--- | :---: | :---: |
-| User register → Kernel stack 저장 | O | O |
-| Kernel SP 교체 | O | O |
-| Page table base 교체 | **X** | O |
-| FD table 등 교체 | X (ASID 같음) | O (ASID 전환) |
-| TLB 영향 | **X** | O |
 
 
 ## 7. Thread마다 stack이 따로 필요한 이유
@@ -310,11 +293,7 @@ Thread 2
 
 멀티코어 CPU에서는 thread 여러 개를 **실제로 동시에 실행** 할 수 있다.
 
-```txt
-Core 1 → Thread A 실행
-Core 2 → Thread B 실행
-Core 3 → Thread C 실행
-```
+<MulticoreParallelism caption="Single-thread는 한 core만 활용해 나머지 core가 idle이지만, multi-thread는 작업을 쪼개서 모든 core를 실제 병렬로 활용할 수 있다." />
 
 싱글 thread라면 한 번에 하나의 core만 제대로 사용할 수 있다. 하지만 멀티스레드 프로그램은 작업을 나누어 여러 core에서 병렬 실행할 수 있다.
 
@@ -326,21 +305,9 @@ Core 3 → Thread C 실행
 
 어떤 작업은 오래 걸린다. 예를 들어 **disk I/O, network I/O, sensor input, file read/write** 같은 작업은 CPU 계산보다 훨씬 느릴 수 있다.
 
-단일 thread라면 I/O가 끝날 때까지 프로그램 전체가 기다려야 한다.
+단일 thread라면 I/O가 끝날 때까지 프로그램 전체가 기다려야 하지만, thread를 나누면 한 thread가 I/O를 기다리는 동안 다른 thread가 계산을 계속할 수 있다.
 
-```txt
-I/O 요청
-  → 기다림
-  → I/O 완료
-  → 다음 코드 실행
-```
-
-하지만 thread를 나누면 한 thread가 I/O를 기다리는 동안 다른 thread가 계산을 계속할 수 있다.
-
-```txt
-Thread A → I/O 담당
-Thread B → 계산 담당
-```
+<IOOverlapTimeline caption="Single 트랙은 I/O 동안 통째로 blocked. Multi 트랙은 Thread A가 I/O를 기다리는 동안 Thread B가 그대로 compute를 진행 — 같은 wall-clock 시간 안에 더 많은 일을 한다." />
 
 > Threading enables **overlap** of I/O with other activities within a single program. 이는 process across programs 차원에서의 **multiprogramming** 과 비슷한 효과를 한 프로그램 안에서 만들어 준다.
 
@@ -348,20 +315,11 @@ Thread B → 계산 담당
 
 ### 3) 데이터 공유가 쉬움
 
-프로세스끼리는 주소 공간이 다르기 때문에 데이터를 주고받으려면 IPC가 필요하다.
+프로세스끼리는 주소 공간이 다르기 때문에 데이터를 주고받으려면 IPC가 필요하다. 반면 thread들은 같은 address space를 공유하므로 **data segment나 heap에 있는 데이터를 바로 공유** 할 수 있다.
 
-```txt
-Process A → socket / pipe / shared memory → Process B
-```
+<IpcVsThreadSharing caption="왼쪽 — process끼리는 pipe/socket/shm 같은 IPC 채널을 거쳐야만 데이터를 주고받을 수 있다. 오른쪽 — 같은 process 안의 thread는 heap을 직접 공유한다." />
 
-하지만 thread들은 같은 address space를 공유하므로 **data segment나 heap에 있는 데이터를 바로 공유** 할 수 있다.
-
-```txt
-Thread A가 heap에 데이터 저장
-Thread B가 같은 heap 주소에서 데이터 읽음
-```
-
-이것은 빠르고 편리하다. 하지만 동시에 위험하다 — 여러 thread가 같은 데이터를 동시에 수정하면 **race condition** 이 발생할 수 있다.
+Thread 방식은 빠르고 편리하다. 하지만 동시에 위험하다 — 여러 thread가 같은 데이터를 동시에 수정하면 **race condition** 이 발생할 수 있다.
 
 <Callout kind="note" title="Process vs Thread, 언제 무엇을?">
 <b>Thread</b>는 데이터 공유가 쉽고 context switch가 가볍다.<br/>
@@ -583,9 +541,11 @@ Thread 1: 자기 register 값을 counter에 저장    // counter = 51  (덮어�
 
 PDF 강의자료에는 PC, %eax, counter 변화를 한 줄씩 추적하는 표가 있다 — Thread 중간에 context switching이 발생하는 지점이 명확히 보인다.
 
+<RaceConditionTimeline caption="좌측 컬럼이 Thread 1, 우측 컬럼이 Thread 2 (가운데 회색은 context switch). 우측의 %eax / counter 값을 보면, T2가 51로 덮어쓴 직후 T1이 다시 자신의 51을 덮어써서 두 번의 +1이 한 번만 반영된다." />
+
 <Figure
   src="/figures/ch17-race-condition.png"
-  caption="Race condition trace — PC, %eax, counter가 instruction마다 어떻게 변하는지 추적. Thread 중간에 interrupt가 들어와 context switching이 발생하는 시점이 핵심."
+  caption="원본 PDF의 race condition trace 표 — 위 SVG 다이어그램과 동일한 시나리오를 PC/%eax/counter 컬럼으로 보여준다."
   source="OSTEP 17_Concurrency_Intro 강의자료 (p.16)"
 />
 
@@ -632,11 +592,7 @@ memory-add 0x8049a1c, $0x1    ; 메모리의 counter 값에 1을 더함 (이상�
 
 > Lock은 critical section을 *마치 single atomic instruction처럼 실행되게* (a series of instructions atomically) 만들어 준다.
 
-<Figure
-  src="/figures/ch17-lock-critical-section.png"
-  caption="lock/unlock으로 critical section을 둘러싸는 전형적인 형태. lock~unlock 사이의 코드 전체가 atomic하게 실행되는 것처럼 보장된다."
-  source="OSTEP 17_Concurrency_Intro 강의자료 (p.18)"
-/>
+<LockCriticalSection caption="lock(&mutex) → critical section → unlock(&mutex). 가운데 빨간색 박스가 보호 대상이고, 위/아래 두 게이트가 한 번에 하나의 thread만 통과시킨다." />
 
 ```c
 lock_t mutex;
@@ -646,18 +602,17 @@ balance = balance + 1;   // ← critical section
 unlock(&mutex);
 ```
 
-의미는 다음과 같다.
+각 단계의 의미는 그림과 같다:
 
-```txt
-lock()
-    → critical section에 들어가기 전에 잠금 획득
+- `lock()` — critical section에 들어가기 전 잠금 획득
+- `balance = balance + 1` — 공유 데이터 수정
+- `unlock()` — critical section 사용 완료 후 잠금 해제
 
-balance = balance + 1
-    → 공유 데이터 수정
-
-unlock()
-    → critical section 사용 완료 후 잠금 해제
-```
+<Figure
+  src="/figures/ch17-lock-critical-section.png"
+  caption="원본 PDF의 lock/critical section 형태 — 동일한 패턴을 코드 형태로 표시."
+  source="OSTEP 17_Concurrency_Intro 강의자료 (p.18)"
+/>
 
 이렇게 하면 한 thread가 lock을 잡고 있는 동안 다른 thread는 같은 critical section에 들어갈 수 없다. 즉, **mutual exclusion이 보장된다.**
 
@@ -685,12 +640,12 @@ Lock을 잘못 사용하면 **deadlock** 이 발생할 수 있다. Deadlock은 t
 
 예를 들어:
 
-```txt
-Thread A: lock X 획득 후 lock Y 기다림
-Thread B: lock Y 획득 후 lock X 기다림
-```
+<DeadlockCycle caption="실선(holds)이 현재 잡고 있는 lock, 점선(waits)이 기다리는 lock. 두 점선이 순환을 만들면 어느 쪽도 진행할 수 없다 — circular wait." />
 
-그러면 A는 Y를 기다리고, B는 X를 기다린다. 둘 다 상대방이 lock을 풀어야 진행할 수 있으므로 **영원히 멈춘다.**
+- Thread A: lock X 획득 후 lock Y 기다림
+- Thread B: lock Y 획득 후 lock X 기다림
+
+A는 Y를 기다리고, B는 X를 기다린다. 둘 다 상대방이 lock을 풀어야 진행할 수 있으므로 **영원히 멈춘다.**
 
 또 다른 예로, 어떤 thread가 lock을 잡은 채 무한 루프에 빠지면 다른 thread들은 그 lock을 영원히 얻지 못한다.
 
