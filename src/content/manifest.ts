@@ -1,6 +1,6 @@
 import type { ComponentType } from 'react';
 
-export type PartId = 'cpu' | 'memory';
+export type PartId = 'cpu' | 'memory' | 'concurrency';
 
 export type MdxModule = { default: ComponentType<{ components?: Record<string, ComponentType<unknown>> }> };
 
@@ -31,6 +31,11 @@ export const parts: PartMeta[] = [
     id: 'memory',
     title: 'Part 2. 메모리 가상화',
     description: '주소 공간, 페이징, TLB — 물리 메모리를 가상화하여 프로세스에 나눠주는 방법',
+  },
+  {
+    id: 'concurrency',
+    title: 'Part 3. 동시성 (Concurrency)',
+    description: 'Thread, race condition, critical section, lock — 한 프로세스 안에서 여러 실행 흐름을 안전하게 다루는 방법',
   },
 ];
 
@@ -191,6 +196,15 @@ export const chapters: ChapterMeta[] = [
     lineRange: [3157, 3379],
     loader: () => import('./16-memory-summary.mdx'),
     evolutionTrack: 'memory',
+  },
+  {
+    slug: '17-threads-concurrency',
+    number: 17,
+    title: 'Threads & Concurrency',
+    subtitle: '한 프로세스 안의 여러 실행 흐름 — race condition까지',
+    partId: 'concurrency',
+    lineRange: [3380, 3380],
+    loader: () => import('./17-threads-concurrency.mdx'),
   },
 ];
 

@@ -1,0 +1,760 @@
+<Callout kind="summary" title="이 장의 목적">
+지금까지는 <b>CPU 가상화</b>로 여러 프로세스가 하나의 CPU를 공유하는 법을, <b>메모리 가상화</b>로 각 프로세스가 자기만의 큰 주소 공간을 가진 것처럼 보이게 하는 법을 배웠다. 이번 장부터는 <b>Concurrency (동시성)</b> — 하나의 프로세스 안에서 여러 실행 흐름인 <b>thread</b> 를 만드는 방법, 그리고 그로 인해 발생하는 <b>shared data 문제, race condition, critical section, lock</b> 까지 정리한다.
+</Callout>
+
+이번 강의의 핵심은 **프로세스 안에서 여러 실행 흐름을 만드는 thread**, 그리고 그로 인해 생기는 **공유 메모리 문제, race condition, critical section, lock** 이다.
+
+
+## 1. 지금까지 배운 CPU 가상화와 이번 주제의 차이
+
+이전까지는 CPU virtualization을 배웠다. 하나의 CPU가 있어도 OS가 **context switching과 scheduling** 을 잘 수행하면 여러 프로세스가 동시에 실행되는 것처럼 보인다.
+
+```txt
+Process A 실행
+  → timer interrupt
+  → context switch
+  → Process B 실행
+  → 다시 context switch
+  → Process A 실행
+```
+
+이 방식은 여러 프로세스가 각각 **독립된 주소 공간** 을 가지고 번갈아 실행되는 구조이다.
+
+그런데 이번 강의의 주제는 조금 다르다.
+
+> 이번에는 *하나의 프로세스 안에서* 여러 실행 흐름을 갖는 방법을 다룬다. 이 실행 흐름이 바로 **thread** 이다.
+
+<Callout kind="note" title="Recap — Virtualization">
+- CPU/메모리의 <b>물리 자원을 더 일반적이고 강력하며 사용하기 쉬운 가상 형태</b>로 바꾸는 것이 virtualization.
+- 핵심 도구: system calls, scheduling, context switching, paging, …
+- 그 결과: 각 프로세스에 큰 private virtual memory의 환상, 하나의 CPU를 여러 virtual CPU처럼 보이게 함.
+- "그럼 virtualization만으로 이미 concurrency가 보장되는 거 아닌가?" → <b>아니다</b>. 프로세스끼리는 격리되어 있을 뿐, 한 프로그램 안에서 동시 실행 흐름을 만들려면 thread가 필요하다.
+</Callout>
+
+
+## 2. Thread란?
+
+> Thread는 **하나의 프로세스 안에서 실행되는 독립적인 실행 흐름** 이다.
+
+프로세스가 하나의 주소 공간을 가진 실행 단위라면, thread는 **그 프로세스 안에서 실제로 코드를 실행하는 흐름** 이라고 볼 수 있다.
+
+```txt
+Process
+├── Thread 1
+├── Thread 2
+└── Thread 3
+```
+
+각 thread는 같은 프로세스 안에 있으므로 **code, data, heap, file descriptor table, address space를 공유** 한다. 하지만 각 thread는 서로 다른 실행 흐름이므로 **PC, SP, register state, stack은 따로 가져야** 한다.
+
+- A multi-threaded program has **more than one point of execution** (multiple PCs).
+- They share the same address space → **thread끼리 메모리 상의 데이터를 쉽게 주고받을 수 있다.**
+
+
+## 3. 왜 PC가 여러 개 필요한가?
+
+일반적인 단일 thread 프로그램은 program counter, 즉 PC가 하나다. PC가 하나라는 것은 **코드 실행 위치가 하나** 라는 뜻이다.
+
+```txt
+main()
+  line 1
+  line 2
+  line 3
+  line 4
+```
+
+위에서 아래로 한 줄씩 순차적으로 실행된다.
+
+하지만 thread가 여러 개라면, 하나의 프로세스 안에서 여러 PC가 존재할 수 있다.
+
+```txt
+Thread A의 PC → 코드의 어떤 지점 실행 중
+Thread B의 PC → 코드의 다른 지점 실행 중
+```
+
+그래서 여러 thread가 같은 코드 영역을 공유하면서도 **서로 다른 지점에서 실행** 될 수 있다.
+
+
+## 4. Process와 Thread의 차이
+
+### Process
+
+프로세스는 **독립된 주소 공간** 을 가진다.
+
+```txt
+Process A                Process B
+├── code                 ├── code
+├── data                 ├── data
+├── heap                 ├── heap
+└── stack                └── stack
+```
+
+Process A와 Process B는 서로 다른 virtual address space를 가진다. 따라서 기본적으로 서로의 메모리에 직접 접근할 수 없다.
+
+A가 B에게 데이터를 주려면 **pipe, socket, shared memory, file, message queue** 같은 IPC가 필요하다. 즉, 프로세스 간 데이터 공유는 상대적으로 복잡하고 비용이 크다.
+
+### Thread
+
+반면 thread는 같은 프로세스 안에 있으므로 **주소 공간을 공유** 한다.
+
+```txt
+Process
+├── code       ← Thread들이 공유
+├── data       ← Thread들이 공유
+├── heap       ← Thread들이 공유
+├── stack T1   ← Thread 1 전용
+├── stack T2   ← Thread 2 전용
+└── stack T3   ← Thread 3 전용
+```
+
+즉, 어떤 thread가 heap이나 global variable에 데이터를 써두면, 다른 thread가 같은 주소를 통해 그 데이터를 바로 읽을 수 있다. 이게 thread의 큰 장점이다.
+
+> 다만 이 공유 때문에 뒤에서 보는 **race condition** 문제가 생긴다.
+
+
+## 5. PCB와 TCB
+
+기존에는 프로세스 단위로 실행 상태를 저장하기 위해 **PCB(Process Control Block)** 를 사용한다고 배웠다. 하지만 thread가 도입되면, **프로세스 전체가 공유하는 정보** 와 **thread마다 따로 필요한 정보** 를 구분해야 한다.
+
+<Figure
+  src="/figures/ch17-context-switch-pcb.png"
+  caption="PCB는 프로세스 전체가 공유하는 정보(PID, address space, FD table, signals…)를 가지고, 각 thread마다 별도의 TCB가 매달려 있다."
+  source="OSTEP 17_Concurrency_Intro 강의자료 (p.4)"
+/>
+
+### PCB에 들어가는 정보
+
+PCB에는 **프로세스 전체가 공유하는 정보** 가 들어간다.
+
+```txt
+PCB
+├── PID
+├── address space 정보
+├── page table base register 관련 정보
+├── file descriptor table
+├── signal 관련 정보
+└── 프로세스 전체 상태 정보
+```
+
+이 정보들은 같은 프로세스 안의 thread들이 공유한다. 예를 들어 같은 프로세스의 thread들은 같은 virtual address space를 쓰므로 **page table도 공유** 한다. 따라서 thread 간 context switch에서는 **page table base register를 바꿀 필요가 없다.**
+
+### TCB에 들어가는 정보
+
+각 thread마다 다른 정보는 **TCB(Thread Control Block)** 에 저장한다.
+
+```txt
+TCB
+├── TID
+├── PC
+├── SP
+├── register state
+├── thread state
+└── thread별 kernel stack 정보
+```
+
+thread마다 실행 위치가 다르기 때문에 PC가 다르고, stack도 따로 쓰므로 SP도 다르다.
+
+강의에서는 "PCB 안에 여러 TCB가 포함되어 있다고 생각하면 된다"는 식으로 설명했다. 실제 OS 구현에서는 구조가 다를 수 있지만, 개념적으로는 다음처럼 이해하면 된다.
+
+```txt
+Process 하나
+└── PCB 하나
+    ├── TCB for Thread 1
+    ├── TCB for Thread 2
+    └── TCB for Thread 3
+```
+
+> 핵심: **프로세스 전체가 공유하는 정보는 PCB에, thread마다 달라지는 실행 상태는 TCB에 둔다.**
+
+
+## 6. Thread context switch와 Process context switch의 차이
+
+Thread context switch도 결국 context switch이므로 기본 흐름은 비슷하다. 예를 들어 Thread 1에서 Thread 2로 바뀐다고 해보자.
+
+```txt
+Thread 1 실행 중
+    → timer interrupt / yield / blocking I/O
+    → Kernel mode 진입
+    → Thread 1의 register state 저장
+    → scheduler가 Thread 2 선택
+    → Thread 2의 register state 복원
+    → Thread 2 실행
+```
+
+PDF 기준 단계별로 보면:
+
+```txt
+1. Kernel mode 진입 (Timer Interrupt / System call / page fault …)
+2. Register(CPU)를 T1's kernel stack에 저장
+3. Scheduler가 다음 process / thread 선택 → T2
+4. Switch from T1 to T2
+   - A의 SP, PC 등(OS마다 조금씩 다름)을 A's TCB에 저장
+   - B의 TCB로부터 SP, PC 등을 복원
+5. 이제 CPU는 B's kernel stack 위에서 실행 중
+```
+
+하지만 process context switch와 중요한 차이가 있다.
+
+### Process context switch
+
+프로세스가 바뀌면 **주소 공간도 바뀐다**.
+
+```txt
+Process A → Process B
+```
+
+이 경우 보통 다음 것들이 바뀐다.
+
+```txt
+PC / SP / registers
+page table base register
+address space
+file descriptor table 관점
+TLB 영향 큼  (← 다른 프로세스 translation이 무효화)
+```
+
+프로세스가 다르면 같은 virtual address라도 전혀 다른 physical memory를 가리킬 수 있어서, page table 관련 정보가 바뀌고 TLB도 영향을 많이 받는다.
+
+### Thread context switch
+
+같은 프로세스 안의 thread끼리 바뀌면 **주소 공간은 그대로다**.
+
+```txt
+Thread A → Thread B
+```
+
+이 경우 바뀌어야 하는 것은 주로 **thread별 실행 상태** 다.
+
+```txt
+PC
+SP
+register state
+thread state
+kernel stack
+```
+
+반면 다음 정보는 그대로 유지된다.
+
+```txt
+page table base register
+address space
+file descriptor table
+PID
+```
+
+따라서 thread context switch는 process context switch보다 **상대적으로 가볍다**. 특히 같은 주소 공간을 공유하므로 **TLB 입장에서도 유리** 하다 — process switch처럼 완전히 다른 address space로 바뀌는 것이 아니기 때문이다.
+
+<Callout kind="tip" title="TLB 관점에서의 효과">
+같은 프로세스의 thread는 page table을 공유하므로 기존 <b>TLB entry가 그대로 유효</b>하다. 반면 process가 바뀌면 page table이 통째로 바뀌므로 기존 TLB entry는 더이상 유효하지 않다 (TLB flush 필요). 이를 완화하기 위해 13장에서 본 <b>ASID</b> 가 활용된다.
+</Callout>
+
+<Figure
+  src="/figures/ch17-thread-vs-process-switch.png"
+  caption="Thread switch vs Process switch — Kernel SP 교체는 둘 다 일어나지만 Page table base 교체와 TLB 영향은 process switch에서만 발생한다."
+  source="OSTEP 17_Concurrency_Intro 강의자료 (p.5)"
+/>
+
+| 단계 | Thread Switch (같은 process) | Process Switch |
+| :--- | :---: | :---: |
+| User register → Kernel stack 저장 | O | O |
+| Kernel SP 교체 | O | O |
+| Page table base 교체 | **X** | O |
+| FD table 등 교체 | X (ASID 같음) | O (ASID 전환) |
+| TLB 영향 | **X** | O |
+
+
+## 7. Thread마다 stack이 따로 필요한 이유
+
+Thread는 같은 code, data, heap을 공유하지만, **stack은 공유하면 안 된다.**
+
+왜냐하면 stack에는 **함수 호출 정보, 지역 변수, return address** 등이 들어가기 때문이다. Thread A와 Thread B가 서로 다른 함수를 실행 중이라면 각각의 call stack이 다를 수밖에 없다.
+
+```txt
+Thread A stack
+├── funcA의 local variable
+├── return address
+└── …
+
+Thread B stack
+├── funcB의 local variable
+├── return address
+└── …
+```
+
+따라서 thread마다 **user stack** 이 따로 필요하다. 그리고 kernel mode에 진입했을 때 사용할 **kernel stack** 도 thread마다 따로 필요하다.
+
+```txt
+Thread 1
+├── user stack
+└── kernel stack
+
+Thread 2
+├── user stack
+└── kernel stack
+```
+
+<Figure
+  src="/figures/ch17-address-space.png"
+  caption="Single-Threaded vs Two-Threaded Address Space — heap은 그대로 공유되고, stack만 thread별로 한 덩어리씩 따로 잡힌다."
+  source="OSTEP 17_Concurrency_Intro 강의자료 (p.6)"
+/>
+
+> 멀티스레드가 되면 user stack뿐 아니라 **kernel stack도 thread마다 존재** 한다.
+
+
+## 8. Thread를 쓰는 이유
+
+강의에서는 thread를 쓰는 이유를 크게 세 가지로 설명한다.
+
+### 1) Parallelism (병렬화)
+
+멀티코어 CPU에서는 thread 여러 개를 **실제로 동시에 실행** 할 수 있다.
+
+```txt
+Core 1 → Thread A 실행
+Core 2 → Thread B 실행
+Core 3 → Thread C 실행
+```
+
+싱글 thread라면 한 번에 하나의 core만 제대로 사용할 수 있다. 하지만 멀티스레드 프로그램은 작업을 나누어 여러 core에서 병렬 실행할 수 있다.
+
+> *Parallelization*: standard single-threaded program → multiple CPUs에서 동작하는 프로그램으로 바꾸는 작업.
+
+예를 들어 큰 배열이나 행렬 계산을 여러 구간으로 나누어 thread마다 맡기면 전체 실행 시간이 줄어들 수 있다.
+
+### 2) Blocking I/O를 숨길 수 있음
+
+어떤 작업은 오래 걸린다. 예를 들어 **disk I/O, network I/O, sensor input, file read/write** 같은 작업은 CPU 계산보다 훨씬 느릴 수 있다.
+
+단일 thread라면 I/O가 끝날 때까지 프로그램 전체가 기다려야 한다.
+
+```txt
+I/O 요청
+  → 기다림
+  → I/O 완료
+  → 다음 코드 실행
+```
+
+하지만 thread를 나누면 한 thread가 I/O를 기다리는 동안 다른 thread가 계산을 계속할 수 있다.
+
+```txt
+Thread A → I/O 담당
+Thread B → 계산 담당
+```
+
+> Threading enables **overlap** of I/O with other activities within a single program. 이는 process across programs 차원에서의 **multiprogramming** 과 비슷한 효과를 한 프로그램 안에서 만들어 준다.
+
+이렇게 하면 프로그램 전체의 응답성과 처리량을 높일 수 있다.
+
+### 3) 데이터 공유가 쉬움
+
+프로세스끼리는 주소 공간이 다르기 때문에 데이터를 주고받으려면 IPC가 필요하다.
+
+```txt
+Process A → socket / pipe / shared memory → Process B
+```
+
+하지만 thread들은 같은 address space를 공유하므로 **data segment나 heap에 있는 데이터를 바로 공유** 할 수 있다.
+
+```txt
+Thread A가 heap에 데이터 저장
+Thread B가 같은 heap 주소에서 데이터 읽음
+```
+
+이것은 빠르고 편리하다. 하지만 동시에 위험하다 — 여러 thread가 같은 데이터를 동시에 수정하면 **race condition** 이 발생할 수 있다.
+
+<Callout kind="note" title="Process vs Thread, 언제 무엇을?">
+<b>Thread</b>는 데이터 공유가 쉽고 context switch가 가볍다.<br/>
+<b>Process</b>는 격리(isolation)가 보장된다. 따라서 <i>"논리적으로 완전히 분리된 작업"</i> 일수록 process가 더 적합하다 — 한쪽이 죽어도 다른 쪽은 살아남는다.
+</Callout>
+
+
+## 9. pthread_create와 pthread_join
+
+강의에서는 pthread API를 통해 thread 생성 예제를 설명한다.
+
+<Figure
+  src="/figures/ch17-thread-creation.png"
+  caption="Simple Thread Creation Code (t0.c) — main이 thread 두 개를 만들고 join으로 기다린다."
+  source="OSTEP 17_Concurrency_Intro 강의자료 (p.8)"
+/>
+
+```c
+#include <stdio.h>
+#include <assert.h>
+#include <pthread.h>
+#include "common.h"
+#include "common_threads.h"
+
+void *mythread(void *arg) {
+    printf("%s\n", (char *)arg);
+    return NULL;
+}
+
+int main(int argc, char *argv[]) {
+    pthread_t p1, p2;
+    int rc;
+    printf("main: begin\n");
+    Pthread_create(&p1, NULL, mythread, "A");
+    Pthread_create(&p2, NULL, mythread, "B");
+    // join waits for the threads to finish
+    Pthread_join(p1, NULL);
+    Pthread_join(p2, NULL);
+    printf("main: end\n");
+    return 0;
+}
+```
+
+### pthread_create
+
+`pthread_create()` 는 새로운 thread를 생성하는 함수다. 전형적인 형태는 다음과 같다.
+
+```c
+pthread_create(&thread, NULL, mythread, arg);
+//             │       │     │         │
+//             │       │     │         └─ mythread에 넘겨줄 인자
+//             │       │     └─────────── 새 thread가 실행할 함수
+//             │       └───────────────── thread attribute, 기본값 사용
+//             └───────────────────────── 생성된 thread의 정보를 저장할 handle
+```
+
+예를 들어 위 코드에서는 thread 1이 `"A"` 를 인자로 받고, thread 2가 `"B"` 를 인자로 받아 같은 함수를 실행한다.
+
+**왜 `void *` 를 쓰는가?**
+
+pthread의 thread 함수는 보통 다음 형태를 가진다.
+
+```c
+void *function(void *arg);
+```
+
+입력도 `void *`, 반환도 `void *` 이다. 이유는 **다양한 타입의 인자를 받을 수 있게 하기 위해** 서다.
+
+```c
+(char *)arg
+(int *)arg
+(struct my_arg *)arg
+```
+
+처럼 사용자가 원하는 타입으로 casting해서 쓰면 된다.
+
+다만 단점도 있다. `void *` 는 타입 체크가 약하기 때문에 **잘못 casting해도 컴파일 에러가 안 날 수 있다.** 그래서 실행은 되는데 이상한 값이 나오거나, 디버깅이 어려워질 수 있다.
+
+### pthread_join
+
+`pthread_join()` 은 **특정 thread가 끝날 때까지 기다리는** 함수다.
+
+```c
+pthread_join(p1, NULL);
+pthread_join(p2, NULL);
+```
+
+이걸 쓰지 않으면 main thread가 먼저 종료될 수 있다. main thread가 끝나면 프로세스 자체가 종료될 수 있고, 그러면 아직 실행 중이던 다른 thread들도 함께 사라질 수 있다. 따라서 main이 worker thread의 종료를 기다려야 할 때 `pthread_join()` 을 사용한다.
+
+```txt
+main thread
+  → thread 1 생성
+  → thread 2 생성
+  → thread 1 끝날 때까지 join
+  → thread 2 끝날 때까지 join
+  → main 종료
+```
+
+
+## 10. Thread 실행 순서는 결정적이지 않다
+
+Thread를 생성한 순서대로 실행된다고 **보장되지 않는다.**
+
+```c
+Pthread_create(&p1, NULL, mythread, "A");
+Pthread_create(&p2, NULL, mythread, "B");
+```
+
+이렇게 만들었다고 해서 반드시 A가 먼저 출력되고 B가 나중에 출력되는 것은 아니다. 가능한 결과는 여러 가지다.
+
+<Figure
+  src="/figures/ch17-trace-1.png"
+  caption="Thread Trace (1) — main이 만든 순서대로 Thread 1 → Thread 2 로 실행되는 경우."
+  source="OSTEP 17_Concurrency_Intro 강의자료 (p.9)"
+/>
+
+```txt
+A
+B
+```
+
+일 수도 있고,
+
+<Figure
+  src="/figures/ch17-trace-3.png"
+  caption="Thread Trace (3) — Thread 2가 먼저 실행되어 B가 먼저 출력되는 경우. 같은 코드도 실행 순서가 매번 다를 수 있다."
+  source="OSTEP 17_Concurrency_Intro 강의자료 (p.11)"
+/>
+
+```txt
+B
+A
+```
+
+일 수도 있다.
+
+또는 main thread가 어디까지 실행됐는지, scheduler가 언제 어떤 thread를 선택했는지에 따라 실행 순서가 달라질 수 있다.
+
+> 즉, thread scheduling은 기본적으로 **nondeterministic** 하다. → "Thread의 순서는 어떻게 정하지?" 라는 질문은 곧 critical section/lock 으로 이어진다.
+
+
+## 11. 공유 데이터와 Race Condition
+
+Thread의 장점은 **데이터를 쉽게 공유** 할 수 있다는 것이다. 하지만 바로 그 점 때문에 문제가 생긴다.
+
+예를 들어 global variable `counter` 가 있다고 하자.
+
+```c
+static volatile int counter = 0;
+
+void *mythread(void *arg) {
+    printf("%s: begin\n", (char *)arg);
+    for (int i = 0; i < 10000000; i++) {
+        counter = counter + 1;
+    }
+    printf("%s: done\n", (char *)arg);
+    return NULL;
+}
+```
+
+두 thread가 각각 1천만 번씩 `counter++` 를 수행하면 기대 결과는 **2천만**. 하지만 실제로 돌려보면 매번 다른 값이 나온다.
+
+```txt
+main: begin (counter = 0)
+A: begin
+B: begin
+A: done
+B: done
+main: done with both (counter = 19345221)   ← 매번 다른 값
+                                              → Race condition
+```
+
+겉으로 보면 `counter++` 는 단순한 한 줄이지만, 실제 기계어 수준에서는 여러 단계로 나뉜다.
+
+```asm
+105   mov 0x8049a1c, %eax    ; counter 값을 메모리에서 레지스터로 읽어옴
+108   add $0x1, %eax         ; 레지스터 값에 1을 더함
+113   mov %eax, 0x8049a1c    ; 결과를 다시 메모리에 저장
+```
+
+> 즉, `counter++` 는 **atomic하지 않다.** 이 사이에 context switch가 끼어들 수 있다.
+
+
+## 12. Race Condition 예시
+
+초기 `counter` 값이 50이라고 하자. Thread 1과 Thread 2가 각각 `counter++` 를 한 번씩 실행하면 기대 결과는 **52** 이다. 하지만 실제로는 **51** 이 나올 수 있다.
+
+### 기대한 흐름
+
+```txt
+counter = 50
+
+Thread 1: counter++  →  51
+Thread 2: counter++  →  52
+
+최종 counter = 52
+```
+
+### 문제가 생기는 흐름
+
+```txt
+counter = 50
+
+Thread 1: counter 값을 register로 읽음        // register = 50
+Thread 1: register에 1 더함                    // register = 51
+
+  ── context switch 발생 ──
+
+Thread 2: counter 값을 register로 읽음        // 아직 메모리의 counter = 50
+Thread 2: register에 1 더함                    // register = 51
+Thread 2: register 값을 counter에 저장        // counter = 51
+
+  ── context switch 발생 ──
+
+Thread 1: 자기 register 값을 counter에 저장    // counter = 51  (덮어쓰기!)
+
+최종 counter = 51    ← 두 번 더했는데 1번만 반영됨
+```
+
+PDF 강의자료에는 PC, %eax, counter 변화를 한 줄씩 추적하는 표가 있다 — Thread 중간에 context switching이 발생하는 지점이 명확히 보인다.
+
+<Figure
+  src="/figures/ch17-race-condition.png"
+  caption="Race condition trace — PC, %eax, counter가 instruction마다 어떻게 변하는지 추적. Thread 중간에 interrupt가 들어와 context switching이 발생하는 시점이 핵심."
+  source="OSTEP 17_Concurrency_Intro 강의자료 (p.16)"
+/>
+
+> 이처럼 여러 thread가 공유 데이터를 동시에 접근하고, **실행 순서에 따라 결과가 달라지는 문제** 가 race condition이다.
+
+
+## 13. 용어 정리 — Race Condition / Critical Section / Mutual Exclusion / Atomicity
+
+<Callout kind="note" title="핵심 용어">
+- <b>Race Condition</b> — 결과가 코드의 <i>실행 타이밍</i>에 따라 달라지는 상황. Result is <b>indeterminate</b>.<br/>
+- <b>Critical Section</b> — 공유 변수에 접근하는 코드 구간으로, <i>여러 thread가 동시에 실행하면 안 되는 영역</i>. multiple threads executing critical section → race condition.<br/>
+- <b>Mutual Exclusion (상호 배제)</b> — critical section에는 한 번에 하나의 thread만 들어갈 수 있도록 보장하는 성질.<br/>
+- <b>Atomicity (원자성)</b> — 일련의 instruction들이 <i>쪼갤 수 없는 한 덩어리</i>처럼 실행되는 성질. critical section을 마치 single atomic instruction처럼 실행되게 만드는 것이 목표.
+</Callout>
+
+Race condition이 발생할 수 있는 코드 구간을 **critical section** 이라고 한다. 예를 들어 다음 코드가 문제 구간이다.
+
+```c
+counter++;
+```
+
+여러 thread가 동시에 이 코드를 실행하면 counter 값이 꼬일 수 있기 때문이다.
+
+Critical section은 다음 조건을 가진다.
+
+```txt
+1. 공유 데이터에 접근한다.
+2. 그 데이터를 수정한다.
+3. 동시에 실행되면 결과가 달라질 수 있다.
+```
+
+따라서 critical section은 **한 번에 하나의 thread만 들어가게** 만들어야 한다 — 이것이 mutual exclusion이다.
+
+
+## 14. The wish for atomicity — Lock과 Unlock
+
+**Ideal approach** — `counter++` 같은 작업을 통째로 **하나의 single assembly instruction** 으로 만들 수 있으면 좋다.
+
+```asm
+memory-add 0x8049a1c, $0x1    ; 메모리의 counter 값에 1을 더함 (이상적인 atomic instruction)
+```
+
+하지만 일반적으로 그런 instruction이 모든 경우에 존재하는 것은 아니다. 그래서 우리는 **lock** 을 사용한다.
+
+> Lock은 critical section을 *마치 single atomic instruction처럼 실행되게* (a series of instructions atomically) 만들어 준다.
+
+<Figure
+  src="/figures/ch17-lock-critical-section.png"
+  caption="lock/unlock으로 critical section을 둘러싸는 전형적인 형태. lock~unlock 사이의 코드 전체가 atomic하게 실행되는 것처럼 보장된다."
+  source="OSTEP 17_Concurrency_Intro 강의자료 (p.18)"
+/>
+
+```c
+lock_t mutex;
+// …
+lock(&mutex);
+balance = balance + 1;   // ← critical section
+unlock(&mutex);
+```
+
+의미는 다음과 같다.
+
+```txt
+lock()
+    → critical section에 들어가기 전에 잠금 획득
+
+balance = balance + 1
+    → 공유 데이터 수정
+
+unlock()
+    → critical section 사용 완료 후 잠금 해제
+```
+
+이렇게 하면 한 thread가 lock을 잡고 있는 동안 다른 thread는 같은 critical section에 들어갈 수 없다. 즉, **mutual exclusion이 보장된다.**
+
+
+## 15. "Lock이 context switch를 막는다"는 표현에 대한 보정
+
+강의에서는 직관적으로 *"critical section 안에서 context switch가 발생하지 않게 막는다"* 는 식으로 설명했다. 시험용 직관으로는 어느 정도 이해할 수 있지만, **정확히는 조금 다르다.**
+
+일반적인 lock은 **context switch 자체를 완전히 막는 장치가 아니다.** 정확히는:
+
+```txt
+Thread A가 lock을 잡고 critical section에 들어감
+    → context switch는 발생할 수 있음
+    → 하지만 Thread B가 같은 lock을 잡고 critical section에 들어가지는 못함
+```
+
+즉, lock의 핵심은 **"context switch 차단"** 이 아니라 **"동시에 critical section에 들어가는 것을 막는 것"** 이다.
+
+물론 커널 내부의 특정 lock이나 interrupt disable 같은 특수한 경우에는 실제로 preemption이나 interrupt를 제한하기도 한다. 하지만 일반적인 pthread mutex 관점에서는 **mutual exclusion을 제공한다** 고 이해하는 게 더 정확하다.
+
+
+## 16. Deadlock
+
+Lock을 잘못 사용하면 **deadlock** 이 발생할 수 있다. Deadlock은 thread들이 서로 lock을 기다리면서 **영원히 진행하지 못하는 상황** 이다.
+
+예를 들어:
+
+```txt
+Thread A: lock X 획득 후 lock Y 기다림
+Thread B: lock Y 획득 후 lock X 기다림
+```
+
+그러면 A는 Y를 기다리고, B는 X를 기다린다. 둘 다 상대방이 lock을 풀어야 진행할 수 있으므로 **영원히 멈춘다.**
+
+또 다른 예로, 어떤 thread가 lock을 잡은 채 무한 루프에 빠지면 다른 thread들은 그 lock을 영원히 얻지 못한다.
+
+```c
+lock();
+
+while (1) {
+    // infinite loop
+}
+
+unlock();   // 도달하지 못함
+```
+
+이것도 실질적으로 다른 thread들을 막아버리는 심각한 문제다.
+
+
+## 17. 전체 흐름 요약
+
+```txt
+1. CPU virtualization
+   → 하나의 CPU를 여러 프로세스가 나눠 쓰는 것처럼 보이게 함
+
+2. Thread
+   → 하나의 프로세스 안에 여러 실행 흐름을 둠
+
+3. Thread의 특징
+   → code, data, heap, file descriptor table, address space 공유
+   → PC, SP, register, stack은 thread마다 따로 필요
+
+4. PCB와 TCB
+   → PCB: 프로세스 전체 정보
+   → TCB: thread별 실행 상태
+
+5. Thread context switch
+   → PC, SP, register state는 바뀜
+   → page table/address space는 그대로 유지 가능
+   → process context switch보다 가벼움 (TLB 영향도 적음)
+
+6. Thread의 장점
+   → 병렬화 (parallelism)
+   → blocking I/O 완화 (overlap)
+   → 데이터 공유 쉬움
+
+7. Thread의 문제
+   → 공유 데이터 때문에 race condition 발생 가능
+   → 실행 순서 nondeterministic
+
+8. 해결 방향
+   → critical section 정의
+   → atomicity 필요
+   → lock/unlock으로 mutual exclusion 보장
+
+9. 추가 문제
+   → lock을 잘못 쓰면 deadlock 발생 가능
+```
+
+
+## 최종 정리
+
+17번 PDF의 핵심은 **thread를 통해 하나의 프로세스 안에 여러 실행 흐름을 만들 수 있다는 것** 이다.
+
+- Thread들은 같은 address space를 공유하기 때문에 **데이터 공유가 쉽고**, process context switch보다 **가볍다** (TLB까지 유리).
+- 하지만 같은 데이터를 동시에 수정할 수 있기 때문에 **race condition** 이 발생한다.
+- 이를 막기 위해 **critical section** 을 정의하고 **lock/unlock으로 mutual exclusion** 을 보장해야 한다.
+- 다만 lock을 잘못 사용하면 **deadlock** 같은 새로운 문제가 발생할 수 있다.
+
+> 다음 장(18 — Thread API, 19/20 — Locks)에서는 *이 lock을 실제로 어떻게 만들 것인가* 를 다룬다.

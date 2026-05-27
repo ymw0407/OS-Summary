@@ -39,7 +39,9 @@ export function Home() {
       {parts.map((part) => (
         <section key={part.id} className={s.partSection}>
           <header className={s.partHeader}>
-            <div className={s.partLabel}>{part.id === 'cpu' ? 'Part 1' : 'Part 2'}</div>
+            <div className={s.partLabel}>
+              {part.id === 'cpu' ? 'Part 1' : part.id === 'memory' ? 'Part 2' : 'Part 3'}
+            </div>
             <h2 className={s.partTitle}>{part.title}</h2>
             <p className={s.partDesc}>{part.description}</p>
           </header>
