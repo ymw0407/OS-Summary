@@ -183,6 +183,282 @@ export function ThreadAnatomy({ caption }: { caption?: string }) {
 }
 
 // ────────────────────────────────────────────────────────────────────────────
+// 2-b. Thread memory map — user mode + kernel mode 양쪽에서 무엇이
+//      shared / per-thread 인지 한 장에 보여주는 종합 도식.
+// ────────────────────────────────────────────────────────────────────────────
+export function ThreadMemoryMap({ caption }: { caption?: string }) {
+  const W = 760;
+  const H = 760;
+
+  const outerX = 20;
+  const outerY = 30;
+  const outerW = W - 40;
+  const outerH = H - 50;
+
+  // ── User mode section ──
+  const userY = 60;
+  const userH = 290;
+  const userInnerX = outerX + 20;
+  const userInnerW = outerW - 40;
+
+  // user-mode shared band
+  const uSharedY = userY + 30;
+  const uSharedH = 100;
+  const uSharedCells = [
+    { label: 'code', sub: 'instructions' },
+    { label: 'data', sub: 'global / static' },
+    { label: 'heap', sub: 'malloc()' },
+    { label: 'libs', sub: 'shared libs' },
+  ];
+  const uCellW = (userInnerW - 20 - 10 * (uSharedCells.length - 1)) / uSharedCells.length;
+
+  // user-mode per-thread cards
+  const uThreadsY = uSharedY + uSharedH + 38;
+  const uThreadH = 88;
+  const uThreadColW = (userInnerW - 20 - 20 * 2) / 3;
+
+  // ── Trap zone ──
+  const trapY = userY + userH + 6;
+  const trapH = 60;
+
+  // ── Kernel mode section ──
+  const kerY = trapY + trapH + 6;
+  const kerH = H - kerY - 30;
+  const kerInnerX = userInnerX;
+  const kerInnerW = userInnerW;
+
+  // kernel shared (PCB + page table)
+  const kSharedY = kerY + 30;
+  const kSharedH = 96;
+  // kernel per-thread cards (TCB + kernel stack stacked vertically)
+  const kThreadsY = kSharedY + kSharedH + 38;
+  const kTcbH = 86;
+  const kStackH = 54;
+  const kThreadColW = uThreadColW;
+
+  const threadTones: BoxTone[] = ['solution', 'limitation', 'problem'];
+
+  return (
+    <Diagram caption={caption}>
+      <svg className={s.svg} viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Thread memory map across user and kernel mode">
+        <ArrowDefs />
+
+        {/* outer process box */}
+        <BoxBg x={outerX} y={outerY} w={outerW} h={outerH} tone="muted" />
+        <text x={outerX + 14} y={outerY + 20} fontSize={13} fontFamily={vars.font.sans} fontWeight={700} fill={vars.color.text}>
+          Process — 하나의 address space
+        </text>
+
+        {/* ====================== USER MODE ====================== */}
+        <BoxBg x={userInnerX} y={userY} w={userInnerW} h={userH} tone="plain" />
+        <text x={userInnerX + 12} y={userY + 20} fontSize={12} fontFamily={vars.font.sans} fontWeight={700} fill={vars.color.text}>
+          User Mode (user space)
+        </text>
+
+        {/* user-mode SHARED band */}
+        <BoxBg x={userInnerX + 10} y={uSharedY} w={userInnerW - 20} h={uSharedH} tone="accent" />
+        <text x={userInnerX + 22} y={uSharedY + 18} fontSize={11.5} fontFamily={vars.font.sans} fontWeight={700} fill={vars.color.accent}>
+          🟦 SHARED — 모든 thread가 같은 메모리를 그대로 본다
+        </text>
+        {uSharedCells.map((c, i) => (
+          <g key={c.label}>
+            <BoxBg
+              x={userInnerX + 22 + i * (uCellW + 10)}
+              y={uSharedY + 32}
+              w={uCellW}
+              h={uSharedH - 42}
+              tone="plain"
+            />
+            <text
+              x={userInnerX + 22 + i * (uCellW + 10) + uCellW / 2}
+              y={uSharedY + 32 + 26}
+              textAnchor="middle"
+              fontSize={13.5}
+              fontFamily={vars.font.mono}
+              fontWeight={700}
+              fill={vars.color.text}
+            >
+              {c.label}
+            </text>
+            <text
+              x={userInnerX + 22 + i * (uCellW + 10) + uCellW / 2}
+              y={uSharedY + 32 + 46}
+              textAnchor="middle"
+              fontSize={11}
+              fontFamily={vars.font.sans}
+              fill={vars.color.textMuted}
+            >
+              {c.sub}
+            </text>
+          </g>
+        ))}
+
+        {/* user-mode PER-THREAD label */}
+        <text
+          x={userInnerX + 22}
+          y={uSharedY + uSharedH + 24}
+          fontSize={11.5}
+          fontFamily={vars.font.sans}
+          fontWeight={700}
+          fill={vars.color.problem}
+        >
+          🟧 PER-THREAD — thread마다 따로
+        </text>
+
+        {/* user stacks */}
+        {[0, 1, 2].map((i) => {
+          const x = userInnerX + 22 + i * (kThreadColW + 20);
+          return (
+            <g key={i}>
+              <BoxBg x={x} y={uThreadsY} w={kThreadColW} h={uThreadH} tone={threadTones[i]} />
+              <text x={x + kThreadColW / 2} y={uThreadsY + 22} textAnchor="middle" fontSize={12} fontFamily={vars.font.sans} fontWeight={700} fill={toneTextColor(threadTones[i])}>
+                Thread {i + 1}
+              </text>
+              <text x={x + kThreadColW / 2} y={uThreadsY + 44} textAnchor="middle" fontSize={13} fontFamily={vars.font.mono} fontWeight={700} fill={vars.color.text}>
+                user stack
+              </text>
+              <text x={x + kThreadColW / 2} y={uThreadsY + 62} textAnchor="middle" fontSize={10.5} fontFamily={vars.font.sans} fill={vars.color.textMuted}>
+                local var · return addr
+              </text>
+              <text x={x + kThreadColW / 2} y={uThreadsY + 78} textAnchor="middle" fontSize={10.5} fontFamily={vars.font.sans} fill={vars.color.textMuted}>
+                + 실행 중이라면 CPU register
+              </text>
+            </g>
+          );
+        })}
+
+        {/* ====================== TRAP ZONE ====================== */}
+        <line x1={userInnerX} y1={trapY + trapH / 2} x2={userInnerX + userInnerW} y2={trapY + trapH / 2} stroke={vars.color.border} strokeDasharray="5 5" />
+        {/* down arrow: user → kernel */}
+        <line
+          x1={W / 2 - 70}
+          y1={trapY + 4}
+          x2={W / 2 - 70}
+          y2={trapY + trapH - 4}
+          stroke={vars.color.problem}
+          strokeWidth={1.6}
+          markerEnd="url(#ch17-arrow-problem)"
+        />
+        <text x={W / 2 - 56} y={trapY + 22} fontSize={11.5} fontFamily={vars.font.sans} fontWeight={700} fill={vars.color.problem}>
+          trap (syscall · timer · page fault)
+        </text>
+        <text x={W / 2 - 56} y={trapY + 38} fontSize={10.5} fontFamily={vars.font.sans} fill={vars.color.textMuted}>
+          → 현재 register를 자신의 kernel stack(또는 TCB)에 저장
+        </text>
+        {/* up arrow: kernel → user (return) */}
+        <line
+          x1={W / 2 + 110}
+          y1={trapY + trapH - 4}
+          x2={W / 2 + 110}
+          y2={trapY + 4}
+          stroke={vars.color.solution}
+          strokeWidth={1.6}
+          markerEnd="url(#ch17-arrow-solution)"
+        />
+        <text x={W / 2 + 124} y={trapY + 22} fontSize={11.5} fontFamily={vars.font.sans} fontWeight={700} fill={vars.color.solution}>
+          return
+        </text>
+        <text x={W / 2 + 124} y={trapY + 38} fontSize={10.5} fontFamily={vars.font.sans} fill={vars.color.textMuted}>
+          저장된 register 복원 → user mode 재개
+        </text>
+
+        {/* ====================== KERNEL MODE ====================== */}
+        <BoxBg x={kerInnerX} y={kerY} w={kerInnerW} h={kerH} tone="plain" />
+        <text x={kerInnerX + 12} y={kerY + 20} fontSize={12} fontFamily={vars.font.sans} fontWeight={700} fill={vars.color.text}>
+          Kernel Mode (kernel space)
+        </text>
+
+        {/* kernel SHARED — PCB */}
+        <BoxBg x={kerInnerX + 10} y={kSharedY} w={kerInnerW - 20} h={kSharedH} tone="accent" />
+        <text x={kerInnerX + 22} y={kSharedY + 18} fontSize={11.5} fontFamily={vars.font.sans} fontWeight={700} fill={vars.color.accent}>
+          🟦 SHARED — 이 process의 모든 thread가 같이 본다
+        </text>
+        {/* PCB box */}
+        <BoxBg x={kerInnerX + 22} y={kSharedY + 30} w={(kerInnerW - 50) * 0.55} h={kSharedH - 40} tone="plain" />
+        <text x={kerInnerX + 32} y={kSharedY + 30 + 18} fontSize={12} fontFamily={vars.font.mono} fontWeight={700} fill={vars.color.text}>
+          PCB (Process Control Block)
+        </text>
+        {['PID', 'address space', 'page table base register', 'file descriptor table', 'signal info'].map((it, i) => {
+          const col = i % 2;
+          const row = Math.floor(i / 2);
+          return (
+            <text
+              key={it}
+              x={kerInnerX + 36 + col * 180}
+              y={kSharedY + 30 + 36 + row * 14}
+              fontSize={10.5}
+              fontFamily={vars.font.mono}
+              fill={vars.color.textMuted}
+            >
+              · {it}
+            </text>
+          );
+        })}
+        {/* Page table & TLB box */}
+        <BoxBg x={kerInnerX + 22 + (kerInnerW - 50) * 0.55 + 10} y={kSharedY + 30} w={(kerInnerW - 50) * 0.45 - 4} h={kSharedH - 40} tone="plain" />
+        <text x={kerInnerX + 22 + (kerInnerW - 50) * 0.55 + 22} y={kSharedY + 30 + 18} fontSize={12} fontFamily={vars.font.mono} fontWeight={700} fill={vars.color.text}>
+          Page Table · TLB
+        </text>
+        <text x={kerInnerX + 22 + (kerInnerW - 50) * 0.55 + 22} y={kSharedY + 30 + 36} fontSize={10.5} fontFamily={vars.font.sans} fill={vars.color.textMuted}>
+          같은 address space →
+        </text>
+        <text x={kerInnerX + 22 + (kerInnerW - 50) * 0.55 + 22} y={kSharedY + 30 + 50} fontSize={10.5} fontFamily={vars.font.sans} fill={vars.color.textMuted}>
+          page table도 공유
+        </text>
+
+        {/* kernel PER-THREAD label */}
+        <text
+          x={kerInnerX + 22}
+          y={kSharedY + kSharedH + 24}
+          fontSize={11.5}
+          fontFamily={vars.font.sans}
+          fontWeight={700}
+          fill={vars.color.problem}
+        >
+          🟧 PER-THREAD — thread마다 TCB와 kernel stack이 따로
+        </text>
+
+        {/* per-thread kernel cards */}
+        {[0, 1, 2].map((i) => {
+          const x = kerInnerX + 22 + i * (kThreadColW + 20);
+          const ty = kThreadsY;
+          return (
+            <g key={i}>
+              {/* TCB */}
+              <BoxBg x={x} y={ty} w={kThreadColW} h={kTcbH} tone={threadTones[i]} />
+              <text x={x + kThreadColW / 2} y={ty + 18} textAnchor="middle" fontSize={11.5} fontFamily={vars.font.sans} fontWeight={700} fill={toneTextColor(threadTones[i])}>
+                Thread {i + 1} — TCB
+              </text>
+              {['TID', 'PC', 'SP', 'saved registers', 'thread state'].map((f, fi) => (
+                <text
+                  key={f}
+                  x={x + 12}
+                  y={ty + 36 + fi * 11}
+                  fontSize={10}
+                  fontFamily={vars.font.mono}
+                  fill={vars.color.text}
+                >
+                  · {f}
+                </text>
+              ))}
+
+              {/* kernel stack */}
+              <BoxBg x={x} y={ty + kTcbH + 8} w={kThreadColW} h={kStackH} tone={threadTones[i]} />
+              <text x={x + kThreadColW / 2} y={ty + kTcbH + 8 + 22} textAnchor="middle" fontSize={12.5} fontFamily={vars.font.mono} fontWeight={700} fill={toneTextColor(threadTones[i])}>
+                kernel stack
+              </text>
+              <text x={x + kThreadColW / 2} y={ty + kTcbH + 8 + 40} textAnchor="middle" fontSize={10.5} fontFamily={vars.font.sans} fill={vars.color.textMuted}>
+                kernel mode 진입 시 사용
+              </text>
+            </g>
+          );
+        })}
+      </svg>
+    </Diagram>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────────────
 // 3. Multicore parallelism — single vs multi-thread on multi-core
 // ────────────────────────────────────────────────────────────────────────────
 export function MulticoreParallelism({ caption }: { caption?: string }) {

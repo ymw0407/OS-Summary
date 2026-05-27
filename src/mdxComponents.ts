@@ -21,6 +21,7 @@ import {
 import {
   CpuVirtTimeline,
   ThreadAnatomy,
+  ThreadMemoryMap,
   MulticoreParallelism,
   IOOverlapTimeline,
   IpcVsThreadSharing,
@@ -55,6 +56,7 @@ export const mdxComponents = {
   // 17장(Threads & Concurrency) 전용 SVG 다이어그램들.
   CpuVirtTimeline,
   ThreadAnatomy,
+  ThreadMemoryMap,
   MulticoreParallelism,
   IOOverlapTimeline,
   IpcVsThreadSharing,

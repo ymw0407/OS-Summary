@@ -156,6 +156,28 @@ Process 하나
 > 핵심: **프로세스 전체가 공유하는 정보는 PCB에, thread마다 달라지는 실행 상태는 TCB에 둔다.**
 
 
+### 한눈에 보는 메모리 지도 — user mode + kernel mode
+
+지금까지 본 *"공유 vs thread별"* 그리고 *"user space vs kernel space"* 를 한 장에 모아 보면 이렇다.
+
+<ThreadMemoryMap caption="가로축: User Mode(위) / Kernel Mode(아래). 세로축: 같은 색으로 묶인 항목이 SHARED(파랑) 혹은 PER-THREAD(주황). 가운데 점선은 trap 경계 — trap이 일어나면 user stack에서 같은 thread의 kernel stack 위로 옮겨가서 실행한다." />
+
+| 위치 | SHARED (모든 thread 공통) | PER-THREAD (각자 보유) |
+| :--- | :--- | :--- |
+| **User space** | code · data · heap · shared libs | user stack (한 개씩) |
+| **CPU** | — | register set (실행 중인 thread의 것이 들어가 있음) |
+| **Kernel space** | PCB (PID, page table base, FD table, signals, …) · page table · TLB | TCB (TID, PC, SP, 저장된 register, state) · kernel stack |
+
+핵심 포인트:
+
+- **page table은 공유다.** 같은 process이므로 모든 thread가 같은 virtual → physical 매핑을 본다. 그래서 thread context switch에서는 page table base를 바꿀 일이 없다.
+- **register set은 CPU에 하나만 있다.** 지금 실행 중인 thread의 register가 들어가 있고, 다른 thread의 register는 *해당 thread의 kernel stack이나 TCB에 저장* 되어 있다.
+- **user stack 따로, kernel stack 따로.** 같은 thread여도 user mode에서 쓰는 스택과 trap으로 kernel mode 들어갔을 때 쓰는 스택은 별개. 하지만 둘 다 *"이 thread 전용"* 이다.
+- **PCB는 하나, TCB는 thread 수만큼.** PCB가 process-wide 설정을 들고, 그 안(또는 옆)에 TCB가 thread마다 매달려 실행 상태를 들고 있다.
+
+> trap이 일어나는 순간: CPU register → 같은 thread의 kernel stack(또는 TCB)에 저장 → kernel SP로 교체 → kernel 코드 실행. 돌아올 때는 그 역순. **PCB/page table은 손대지 않는다.**
+
+
 ## 6. Thread context switch와 Process context switch의 차이
 
 Thread context switch도 결국 context switch이므로 기본 흐름은 비슷하다. 예를 들어 Thread 1에서 Thread 2로 바뀐다고 해보자.
