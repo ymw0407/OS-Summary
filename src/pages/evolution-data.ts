@@ -733,6 +733,6 @@ export const memoryChain: EvolutionNode[] = [
     tagline: 'coarse → fixed → hierarchical.',
     keyIdea:
       '거친 재배치(Base/Bound) → 논리 단위(Segmentation) → 가변 관리의 한계 → 고정 단위(Paging) → 번역 가속(TLB) → 계층화(Multi-Level)로 이어진 한 줄기. 각 단계는 "시간을 벌거나, 공간을 아끼거나" 의 결정.',
-    to: { chapter: '15-memory-summary' },
+    to: { chapter: '17-memory-summary' },
   },
 ];

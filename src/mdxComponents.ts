@@ -21,6 +21,18 @@ import {
   BackingStoreBranch,
 } from './components/Ch15Diagrams/Ch15Diagrams';
 import {
+  AmatComparison,
+  ReplacementTrace,
+  BeladyAnomalyChart,
+  WorkloadNoLocality,
+  Workload8020,
+  WorkloadLooping,
+  ClockAlgorithm,
+  DirtyBitDecision,
+  ThrashingChart,
+  PrefetchClustering,
+} from './components/Ch16Diagrams/Ch16Diagrams';
+import {
   CpuVirtTimeline,
   ThreadAnatomy,
   ThreadMemoryMap,
@@ -58,6 +70,17 @@ export const mdxComponents = {
   FullFlowSteps,
   FaultDecisionLevels,
   BackingStoreBranch,
+  // 16장(Swapping Policies) 전용 SVG 다이어그램들.
+  AmatComparison,
+  ReplacementTrace,
+  BeladyAnomalyChart,
+  WorkloadNoLocality,
+  Workload8020,
+  WorkloadLooping,
+  ClockAlgorithm,
+  DirtyBitDecision,
+  ThrashingChart,
+  PrefetchClustering,
   // 17장(Threads & Concurrency) 전용 SVG 다이어그램들.
   CpuVirtTimeline,
   ThreadAnatomy,
