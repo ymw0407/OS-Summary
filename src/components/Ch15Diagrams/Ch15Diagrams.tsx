@@ -1082,6 +1082,165 @@ export function FullFlowSteps({ caption }: { caption?: string }) {
   );
 }
 
+// ────────────────────────────────────────────────────────────────────────────
+// 14. Page fault 판단 주체 — Hardware vs OS
+// ────────────────────────────────────────────────────────────────────────────
+export function FaultDecisionLevels({ caption }: { caption?: string }) {
+  const W = 720;
+  const boxW = 560;
+  const startX = (W - boxW) / 2;
+  const padX = 16;
+
+  const levels: Array<{ title: string; sub: string; tone: BoxTone }> = [
+    {
+      title: 'MMU / Hardware',
+      sub: '"이 page가 지금 DRAM에 없다" 까지만 판단 → PAGE_FAULT 발생',
+      tone: 'accent',
+    },
+    {
+      title: 'OS page fault handler',
+      sub: '"이 page를 어디서 가져올까?" → swap / 실행 파일 / mmap / zero-fill 결정',
+      tone: 'solution',
+    },
+  ];
+
+  const boxH = 64;
+  const gap = 26;
+  const startY = 12;
+  const H = startY + levels.length * boxH + (levels.length - 1) * gap + 10;
+
+  return (
+    <Diagram caption={caption}>
+      <svg className={s.svg} viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Hardware vs OS decision levels on page fault">
+        <ArrowDefs />
+        {levels.map((lv, i) => {
+          const y = startY + i * (boxH + gap);
+          return (
+            <g key={i}>
+              <BoxBg x={startX} y={y} w={boxW} h={boxH} tone={lv.tone} />
+              <text
+                x={startX + padX}
+                y={y + 26}
+                fontSize={14}
+                fontFamily={vars.font.sans}
+                fontWeight={700}
+                fill={toneTextColor(lv.tone)}
+              >
+                {lv.title}
+              </text>
+              <text
+                x={startX + padX}
+                y={y + 48}
+                fontSize={12.5}
+                fontFamily={vars.font.sans}
+                fill={vars.color.text}
+              >
+                {lv.sub}
+              </text>
+              {i < levels.length - 1 && (
+                <Arrow
+                  x1={startX + boxW / 2}
+                  y1={y + boxH + 1}
+                  x2={startX + boxW / 2}
+                  y2={y + boxH + gap - 1}
+                  label="page fault"
+                />
+              )}
+            </g>
+          );
+        })}
+      </svg>
+    </Diagram>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// 15. present = 0 이후 backing store 분기
+// ────────────────────────────────────────────────────────────────────────────
+export function BackingStoreBranch({ caption }: { caption?: string }) {
+  const W = 720;
+
+  const topW = 320;
+  const topX = (W - topW) / 2;
+  const topY = 12;
+  const topH = 46;
+
+  const caseTop = topY + topH + 50;
+  const colW = 218;
+  const colGap = 12;
+  const colStartX = (W - (3 * colW + 2 * colGap)) / 2;
+
+  const cases: Array<{ title: string; tone: BoxTone; lines: string[] }> = [
+    {
+      title: 'Anonymous + swap-out',
+      tone: 'limitation',
+      lines: ['heap / stack 등', '예전에 DRAM에 있었음', '→ swap space에서 read'],
+    },
+    {
+      title: 'File-backed 미로드',
+      tone: 'accent',
+      lines: ['code / lib / mmap', '아직 한 번도 안 올림', '→ 원본 파일에서 read'],
+    },
+    {
+      title: '새 anonymous page',
+      tone: 'solution',
+      lines: ['malloc 후 첫 접근', 'disk read 없음', '→ zero-fill page 생성'],
+    },
+  ];
+
+  const lineH = 18;
+  const caseH = 30 + Math.max(...cases.map((c) => c.lines.length)) * lineH + 12;
+  const H = caseTop + caseH + 12;
+
+  return (
+    <Diagram caption={caption}>
+      <svg className={s.svg} viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Backing store decision after page fault">
+        <ArrowDefs />
+        <Box x={topX} y={topY} w={topW} h={topH} tone="problem" label="present = 0 → page fault" bold />
+
+        {cases.map((c, i) => {
+          const x = colStartX + i * (colW + colGap);
+          // 트리거 박스 → 각 case 로 향하는 화살표
+          return (
+            <g key={c.title}>
+              <Arrow
+                x1={topX + topW / 2}
+                y1={topY + topH + 1}
+                x2={x + colW / 2}
+                y2={caseTop - 1}
+              />
+              <BoxBg x={x} y={caseTop} w={colW} h={caseH} tone={c.tone} />
+              <text
+                x={x + colW / 2}
+                y={caseTop + 20}
+                textAnchor="middle"
+                fontSize={12.5}
+                fontFamily={vars.font.sans}
+                fontWeight={700}
+                fill={toneTextColor(c.tone)}
+              >
+                {c.title}
+              </text>
+              {c.lines.map((ln, j) => (
+                <text
+                  key={j}
+                  x={x + 12}
+                  y={caseTop + 38 + j * lineH + 4}
+                  fontSize={11.5}
+                  fontFamily={vars.font.sans}
+                  fill={vars.color.text}
+                >
+                  • {ln}
+                </text>
+              ))}
+            </g>
+          );
+        })}
+      </svg>
+    </Diagram>
+  );
+}
+
 // ════════════════════════════════════════════════════════════════════════════
 // Primitive helpers (file-scope)
 // ════════════════════════════════════════════════════════════════════════════

@@ -17,6 +17,8 @@ import {
   PageDaemonScenarios,
   PfnReassignment,
   FullFlowSteps,
+  FaultDecisionLevels,
+  BackingStoreBranch,
 } from './components/Ch15Diagrams/Ch15Diagrams';
 import {
   CpuVirtTimeline,
@@ -54,6 +56,8 @@ export const mdxComponents = {
   PageDaemonScenarios,
   PfnReassignment,
   FullFlowSteps,
+  FaultDecisionLevels,
+  BackingStoreBranch,
   // 17장(Threads & Concurrency) 전용 SVG 다이어그램들.
   CpuVirtTimeline,
   ThreadAnatomy,

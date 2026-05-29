@@ -396,6 +396,47 @@ TLB는 최근 사용한 VPN → PFN 변환을 저장하는 캐시다. 그런데 
 <PageDaemonScenarios caption="Page daemon이 background에서 evict를 진행하는 동안 foreground 프로세스가 memory read를 시도하면 page의 위치(DRAM/swap)와 free frame 여부에 따라 세 가지 경로로 갈린다." />
 
 
+## 한 걸음 더: page fault가 나면 데이터를 어디서 가져올까?
+
+여기서 자주 헷갈리는 점이 하나 있다. *"page fault가 났을 때, 이 데이터가 swap space에 있는지 아니면 다른 곳에 있는지를 누가 판단하는가?"* 이다.
+
+핵심은 **하드웨어는 "지금 DRAM에 없다" 까지만 판단한다** 는 것이다. MMU는 PTE의 `Valid → Protection → Present` 를 확인하고, `present = 0` 이면 그냥 `PAGE_FAULT` 를 일으킬 뿐이다. *"그럼 어디서 가져와야 하는가"* 는 전적으로 **OS의 page fault handler** 몫이다.
+
+<FaultDecisionLevels caption="하드웨어는 'DRAM에 없음' 까지만 본다. backing store가 swap인지 파일인지 zero-fill인지는 OS가 PTE와 주소 공간 metadata를 보고 결정한다." />
+
+그래서 page fault가 났다고 **무조건 swap space에서 가져오는 것은 아니다.** OS는 해당 virtual address의 metadata(PTE + 주소 공간의 VMA 정보)를 보고 backing store가 어디인지 결정한다.
+
+<BackingStoreBranch caption="같은 present = 0 이라도 OS가 보는 출처는 다르다. 강의 코드의 PTE.DiskAddr 는 이 'page가 disk 어디에 있는지' 를 단순화한 표현이다." />
+
+- **Anonymous page가 swap-out된 경우** (heap·stack 등): 예전에 DRAM에 있다가 쫓겨난 page → **swap space** 에서 가져온다.
+- **File-backed page가 아직 안 올라온 경우** (실행 코드·공유 라이브러리·mmap된 파일): 아직 한 번도 메모리에 없던 page → **원본 파일** 에서 가져온다.
+- **새 anonymous page** (malloc 후 처음 접근): 가져올 disk 데이터 자체가 없음 → disk read 없이 **zero-fill** 된 새 frame을 준다.
+- **잘못된 주소** (`valid = 0`): 애초에 가져올 곳이 없음 → **segmentation fault**.
+
+<Callout kind="note" title="강의 코드의 단순화">
+강의의 <code>DiskRead(PTE.DiskAddr, PFN)</code> 은 위의 여러 경우를 하나로 단순화한 표현입니다. 실제 OS에서는 이 정보가 항상 PTE 안에 깔끔하게 들어 있다기보다, swapped-out page면 PTE에 swap slot이 기록되고, file-backed page면 VMA가 "이 주소는 어느 파일의 offset" 인지를 알고 있는 식으로 나뉩니다.
+</Callout>
+
+### Demand Paging vs Swapping
+
+`present = 0 → page fault` 는 공통 메커니즘이고, **demand paging** 과 **swapping** 은 그 page fault가 *왜* 났는지(= 출처가 어디인지)가 다르다.
+
+- **Demand Paging** — 처음부터 DRAM에 올리지 않고, **실제로 접근되는 순간** page fault를 통해 그때그때 올리는 전략. 대상 page는 보통 *아직 한 번도 DRAM에 올라온 적이 없다.*
+- **Swapping** — 이미 DRAM에 있던 page를 메모리 부족 때문에 **swap space로 내보냈다가**, 다시 접근될 때 가져오는 전략. 대상 page는 *예전에 DRAM에 있다가 쫓겨났다.*
+
+| 구분 | Demand Paging | Swapping |
+| --- | --- | --- |
+| 핵심 | 필요한 page만 나중에 로드 | 안 쓰는 page를 disk로 내렸다가 다시 로드 |
+| page의 이전 상태 | 아직 DRAM에 올라온 적 없음 | 이미 DRAM에 있다가 evict됨 |
+| page fault 이유 | "아직 안 올렸음" | "올려놨었는데 swap out됨" |
+| 가져오는 곳 | 실행 파일·mmap 파일·zero-fill 등 | swap space |
+| 공통점 | 둘 다 `present = 0` 이면 page fault로 처리, handler가 DRAM에 올린 뒤 instruction 재실행 | |
+
+<Callout kind="tip" title="우리 강의 흐름에서의 위치">
+초반(Address Space ~ Paging)에서는 이해를 위해 <b>"page가 이미 메모리에 올라와 있다"</b> 고 가정하고 주소 변환에 집중했습니다. demand paging은 Process Creation에서 현대 OS의 <i>lazy loading</i> 으로 잠깐 언급되고, 이번 15장에 와서야 <code>present bit</code> · page fault와 연결되어 본격적으로 등장합니다.
+</Callout>
+
+
 ## 전체 흐름 정리
 
 <FullFlowSteps caption="page fault 처리의 14단계 — 각 줄의 ②④⑤⑥ 마크가 위쪽 그림 단계와 1:1 대응된다." />
