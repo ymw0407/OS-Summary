@@ -803,6 +803,110 @@ export function PrefetchClustering({ caption }: { caption?: string }) {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
+// 10. Policy vs Daemon — "어떻게 고를까" vs "누가 실행할까"
+// ════════════════════════════════════════════════════════════════════════════
+export function PolicyVsDaemon({ caption }: { caption?: string }) {
+  const W = 760;
+  const H = 360;
+
+  // 상단: 좌우 두 박스 + 가운데 "uses"
+  const cardW = 280;
+  const cardH = 120;
+  const leftX = 40;
+  const rightX = W - 40 - cardW;
+  const topY = 24;
+
+  // 하단: kswapd 일하는 흐름
+  const flowY = topY + cardH + 56;
+  const stepW = 156;
+  const stepH = 56;
+  const stepGap = 14;
+  const flowStartX = (W - (4 * stepW + 3 * stepGap)) / 2;
+
+  return (
+    <Diagram caption={caption}>
+      <svg className={s.svg} viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Page replacement policy vs executor daemon">
+        <ArrowDefs />
+
+        {/* 왼쪽: 실행 주체 */}
+        <BoxBg x={leftX} y={topY} w={cardW} h={cardH} tone="accent" />
+        <Tag x={leftX + 16} y={topY + 22} text="실행 주체 (executor)" tone="accent" bold size={12.5} />
+        <Mono x={leftX + cardW / 2} y={topY + 56} text="swap / page daemon" anchor="middle" size={15} />
+        <Txt x={leftX + cardW / 2} y={topY + 82} text="예: Linux kswapd" anchor="middle" muted size={11.5} />
+        <Txt x={leftX + cardW / 2} y={topY + 102} text="실제로 깨어나 메모리를 회수한다" anchor="middle" muted size={11} />
+
+        {/* 가운데: uses */}
+        <Arrow x1={leftX + cardW + 6} y1={topY + cardH / 2} x2={rightX - 6} y2={topY + cardH / 2} label="사용 (uses)" />
+
+        {/* 오른쪽: 선택 규칙 */}
+        <BoxBg x={rightX} y={topY} w={cardW} h={cardH} tone="solution" />
+        <Tag x={rightX + 16} y={topY + 22} text="선택 규칙 (policy)" tone="solution" bold size={12.5} />
+        <Mono x={rightX + cardW / 2} y={topY + 56} text="Clock / LRU / FIFO …" anchor="middle" size={15} />
+        <Txt x={rightX + cardW / 2} y={topY + 82} text="누구를 victim 으로 고를지" anchor="middle" muted size={11.5} />
+        <Txt x={rightX + cardW / 2} y={topY + 102} text="규칙만 정의, 실행은 안 한다" anchor="middle" muted size={11} />
+
+        {/* 비유 */}
+        <Txt
+          x={W / 2}
+          y={topY + cardH + 30}
+          text="비유 — daemon 은 청소부, policy 는 '어떤 물건부터 버릴지' 정하는 규칙."
+          anchor="middle"
+          muted
+          size={12}
+        />
+
+        {/* 하단 흐름 */}
+        {[
+          { t: 'free < low watermark', tone: 'problem' as BoxTone },
+          { t: 'daemon 깨어남', tone: 'accent' as BoxTone },
+          { t: 'policy 로 victim 선택', tone: 'solution' as BoxTone, mark: true },
+          { t: 'frame 회수 완료', tone: 'plain' as BoxTone },
+        ].map((st, i) => {
+          const x = flowStartX + i * (stepW + stepGap);
+          return (
+            <g key={i}>
+              <BoxBg x={x} y={flowY} w={stepW} h={stepH} tone={st.tone} />
+              <text
+                x={x + stepW / 2}
+                y={flowY + stepH / 2 + 4}
+                textAnchor="middle"
+                fontSize={12.5}
+                fontFamily={vars.font.sans}
+                fontWeight={st.mark ? 700 : 500}
+                fill={toneTextColor(st.tone)}
+              >
+                {st.t}
+              </text>
+              {i < 3 && (
+                <Arrow
+                  x1={x + stepW + 1}
+                  y1={flowY + stepH / 2}
+                  x2={x + stepW + stepGap - 1}
+                  y2={flowY + stepH / 2}
+                />
+              )}
+              {st.mark && (
+                <text
+                  x={x + stepW / 2}
+                  y={flowY + stepH + 18}
+                  textAnchor="middle"
+                  fontSize={10.5}
+                  fontFamily={vars.font.sans}
+                  fontStyle="italic"
+                  fill={vars.color.solution}
+                >
+                  ↑ Clock / LRU 가 호출되는 지점
+                </text>
+              )}
+            </g>
+          );
+        })}
+      </svg>
+    </Diagram>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
 // Primitives (file-scope)
 // ════════════════════════════════════════════════════════════════════════════
 function Diagram({ children, caption }: { children: ReactNode; caption?: string }) {

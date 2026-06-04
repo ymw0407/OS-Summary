@@ -31,6 +31,7 @@ import {
   DirtyBitDecision,
   ThrashingChart,
   PrefetchClustering,
+  PolicyVsDaemon,
 } from './components/Ch16Diagrams/Ch16Diagrams';
 import {
   CpuVirtTimeline,
@@ -81,6 +82,7 @@ export const mdxComponents = {
   DirtyBitDecision,
   ThrashingChart,
   PrefetchClustering,
+  PolicyVsDaemon,
   // 17장(Threads & Concurrency) 전용 SVG 다이어그램들.
   CpuVirtTimeline,
   ThreadAnatomy,
