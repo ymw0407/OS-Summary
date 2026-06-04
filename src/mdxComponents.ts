@@ -34,6 +34,11 @@ import {
   PolicyVsDaemon,
 } from './components/Ch16Diagrams/Ch16Diagrams';
 import {
+  VmThreadLayoutLinux,
+  TaskStructSharing,
+  StackFrameZoom,
+} from './components/Ch18Diagrams/Ch18Diagrams';
+import {
   CpuVirtTimeline,
   ThreadAnatomy,
   ThreadMemoryMap,
@@ -83,7 +88,11 @@ export const mdxComponents = {
   ThrashingChart,
   PrefetchClustering,
   PolicyVsDaemon,
-  // 17장(Threads & Concurrency) 전용 SVG 다이어그램들.
+  // 18장 후반(Linux 구현 관점) 전용 SVG.
+  VmThreadLayoutLinux,
+  TaskStructSharing,
+  StackFrameZoom,
+  // 18장 본문(Threads & Concurrency) 전용 SVG 다이어그램들.
   CpuVirtTimeline,
   ThreadAnatomy,
   ThreadMemoryMap,
