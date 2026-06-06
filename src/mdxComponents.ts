@@ -39,6 +39,12 @@ import {
   StackFrameZoom,
 } from './components/Ch18Diagrams/Ch18Diagrams';
 import {
+  PthreadJoinTimeline,
+  StackReturnDanger,
+  LockVariantsComparison,
+  CondVarProtocol,
+} from './components/Ch19Diagrams/Ch19Diagrams';
+import {
   CpuVirtTimeline,
   ThreadAnatomy,
   ThreadMemoryMap,
@@ -92,6 +98,11 @@ export const mdxComponents = {
   VmThreadLayoutLinux,
   TaskStructSharing,
   StackFrameZoom,
+  // 19장(Thread API) 전용 SVG.
+  PthreadJoinTimeline,
+  StackReturnDanger,
+  LockVariantsComparison,
+  CondVarProtocol,
   // 18장 본문(Threads & Concurrency) 전용 SVG 다이어그램들.
   CpuVirtTimeline,
   ThreadAnatomy,

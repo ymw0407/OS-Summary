@@ -216,6 +216,15 @@ export const chapters: ChapterMeta[] = [
     lineRange: [3380, 3380],
     loader: () => import('./18-threads-concurrency.mdx'),
   },
+  {
+    slug: '19-thread-api',
+    number: 19,
+    title: 'Thread API',
+    subtitle: 'pthread_create · join · mutex · condition variable',
+    partId: 'concurrency',
+    lineRange: [3380, 3380],
+    loader: () => import('./19-thread-api.mdx'),
+  },
 ];
 
 export function chapterBySlug(slug: string | undefined): ChapterMeta | undefined {
