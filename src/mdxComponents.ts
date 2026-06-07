@@ -45,6 +45,15 @@ import {
   CondVarProtocol,
 } from './components/Ch19Diagrams/Ch19Diagrams';
 import {
+  AtomicityRaceTimeline,
+  TestAndSetMechanic,
+  CasVsTas,
+  TicketLockFlow,
+  LostWakeupRace,
+  FutexFastSlowPath,
+  TwoPhaseLock,
+} from './components/Ch20Diagrams/Ch20Diagrams';
+import {
   CpuVirtTimeline,
   ThreadAnatomy,
   ThreadMemoryMap,
@@ -103,6 +112,14 @@ export const mdxComponents = {
   StackReturnDanger,
   LockVariantsComparison,
   CondVarProtocol,
+  // 20장(Locks) 전용 SVG.
+  AtomicityRaceTimeline,
+  TestAndSetMechanic,
+  CasVsTas,
+  TicketLockFlow,
+  LostWakeupRace,
+  FutexFastSlowPath,
+  TwoPhaseLock,
   // 18장 본문(Threads & Concurrency) 전용 SVG 다이어그램들.
   CpuVirtTimeline,
   ThreadAnatomy,

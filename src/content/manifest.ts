@@ -225,6 +225,15 @@ export const chapters: ChapterMeta[] = [
     lineRange: [3380, 3380],
     loader: () => import('./19-thread-api.mdx'),
   },
+  {
+    slug: '20-locks',
+    number: 20,
+    title: 'Locks',
+    subtitle: 'Spinlock → TAS/CAS/LL-SC → Ticket → 잠재우기 (yield · park · futex)',
+    partId: 'concurrency',
+    lineRange: [3380, 3380],
+    loader: () => import('./20-locks.mdx'),
+  },
 ];
 
 export function chapterBySlug(slug: string | undefined): ChapterMeta | undefined {
