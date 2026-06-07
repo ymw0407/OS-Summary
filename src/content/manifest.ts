@@ -234,6 +234,15 @@ export const chapters: ChapterMeta[] = [
     lineRange: [3380, 3380],
     loader: () => import('./20-locks.mdx'),
   },
+  {
+    slug: '21-concurrent-data-structures',
+    number: 21,
+    title: 'Lock-based Concurrent Data Structures',
+    subtitle: 'Counter · Linked List · Queue · Hash Table — fine-grained 로 쪼개기',
+    partId: 'concurrency',
+    lineRange: [3380, 3380],
+    loader: () => import('./21-concurrent-data-structures.mdx'),
+  },
 ];
 
 export function chapterBySlug(slug: string | undefined): ChapterMeta | undefined {

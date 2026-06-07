@@ -54,6 +54,19 @@ import {
   TwoPhaseLock,
 } from './components/Ch20Diagrams/Ch20Diagrams';
 import {
+  CounterContention,
+  PerfectVsActualScaling,
+  ApproximateCounterArch,
+  ApproximateCounterExample,
+  ThresholdTradeoff,
+  ListSingleLockBottleneck,
+  HandOverHandLocking,
+  MichaelScottQueueLayout,
+  QueueDequeueDummyShift,
+  ConcurrentHashTable,
+  HashFunctionDistribution,
+} from './components/Ch21Diagrams/Ch21Diagrams';
+import {
   CpuVirtTimeline,
   ThreadAnatomy,
   ThreadMemoryMap,
@@ -120,6 +133,18 @@ export const mdxComponents = {
   LostWakeupRace,
   FutexFastSlowPath,
   TwoPhaseLock,
+  // 21장(Lock-based Concurrent Data Structures) 전용 SVG.
+  CounterContention,
+  PerfectVsActualScaling,
+  ApproximateCounterArch,
+  ApproximateCounterExample,
+  ThresholdTradeoff,
+  ListSingleLockBottleneck,
+  HandOverHandLocking,
+  MichaelScottQueueLayout,
+  QueueDequeueDummyShift,
+  ConcurrentHashTable,
+  HashFunctionDistribution,
   // 18장 본문(Threads & Concurrency) 전용 SVG 다이어그램들.
   CpuVirtTimeline,
   ThreadAnatomy,
