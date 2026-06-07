@@ -9,6 +9,9 @@ balance = balance + 1
 ```
 
 ```mips
+lw    $t0, balance     # load:  메모리의 balance → 레지스터 $t0
+addi  $t0, $t0, 1      # add:   $t0 = $t0 + 1
+sw    $t0, balance     # store: $t0 → 메모리의 balance
 ```
 
 `balance = balance + 1`은 한 줄처럼 보이지만 실제로는 load, add, store 같은 여러 단계로 나뉜다. 
