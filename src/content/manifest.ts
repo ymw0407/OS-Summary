@@ -243,6 +243,15 @@ export const chapters: ChapterMeta[] = [
     lineRange: [3380, 3380],
     loader: () => import('./21-concurrent-data-structures.mdx'),
   },
+  {
+    slug: '22-condition-variables',
+    number: 22,
+    title: 'Condition Variables',
+    subtitle: 'wait/signal · 잠들고 깨우기 · Producer/Consumer · Mesa semantics',
+    partId: 'concurrency',
+    lineRange: [3380, 3380],
+    loader: () => import('./22-condition-variables.mdx'),
+  },
 ];
 
 export function chapterBySlug(slug: string | undefined): ChapterMeta | undefined {

@@ -67,6 +67,18 @@ import {
   HashFunctionDistribution,
 } from './components/Ch21Diagrams/Ch21Diagrams';
 import {
+  CondVarTrio,
+  WaitSignalMechanics,
+  LostSignalNoState,
+  LostWakeupNoLock,
+  ProducerConsumerLayout,
+  MesaVsHoareSemantics,
+  MultiConsumerBreaks,
+  TwoCondVarsEmptyFill,
+  CircularBuffer,
+  CoveringConditionBroadcast,
+} from './components/Ch22Diagrams/Ch22Diagrams';
+import {
   CpuVirtTimeline,
   ThreadAnatomy,
   ThreadMemoryMap,
@@ -145,6 +157,17 @@ export const mdxComponents = {
   QueueDequeueDummyShift,
   ConcurrentHashTable,
   HashFunctionDistribution,
+  // 22장(Condition Variables) 전용 SVG.
+  CondVarTrio,
+  WaitSignalMechanics,
+  LostSignalNoState,
+  LostWakeupNoLock,
+  ProducerConsumerLayout,
+  MesaVsHoareSemantics,
+  MultiConsumerBreaks,
+  TwoCondVarsEmptyFill,
+  CircularBuffer,
+  CoveringConditionBroadcast,
   // 18장 본문(Threads & Concurrency) 전용 SVG 다이어그램들.
   CpuVirtTimeline,
   ThreadAnatomy,
