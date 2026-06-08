@@ -9,7 +9,7 @@ export type QuizIndexEntry = {
   chapterNumber: number;
   title: string;
   subtitle?: string;
-  partId: 'cpu' | 'memory';
+  partId: 'cpu' | 'memory' | 'concurrency';
   loader: QuizLoader;
 };
 
@@ -124,6 +124,14 @@ export const quizIndex: QuizIndexEntry[] = [
     title: '메모리 가상화 정리',
     partId: 'memory',
     loader: () => import('./ch15'),
+  },
+  {
+    slug: '23-semaphore',
+    chapterNumber: 23,
+    title: 'Semaphore',
+    subtitle: 'Binary/signaling · Producer/Consumer · RW Lock · Dining · Zemaphore',
+    partId: 'concurrency',
+    loader: () => import('./ch23'),
   },
 ];
 

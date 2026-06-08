@@ -79,6 +79,18 @@ import {
   CoveringConditionBroadcast,
 } from './components/Ch22Diagrams/Ch22Diagrams';
 import {
+  SemValueMeaning,
+  SemTimeline4Threads,
+  BinarySemaphoreAsLock,
+  SemAsCondVar,
+  ProducerConsumerSem,
+  PCDeadlockMutexFirst,
+  RWLockStructure,
+  WriterStarvation,
+  DiningPhilosophers,
+  ZemaphoreImpl,
+} from './components/Ch23Diagrams/Ch23Diagrams';
+import {
   CpuVirtTimeline,
   ThreadAnatomy,
   ThreadMemoryMap,
@@ -168,6 +180,17 @@ export const mdxComponents = {
   TwoCondVarsEmptyFill,
   CircularBuffer,
   CoveringConditionBroadcast,
+  // 23장(Semaphore) 전용 SVG.
+  SemValueMeaning,
+  SemTimeline4Threads,
+  BinarySemaphoreAsLock,
+  SemAsCondVar,
+  ProducerConsumerSem,
+  PCDeadlockMutexFirst,
+  RWLockStructure,
+  WriterStarvation,
+  DiningPhilosophers,
+  ZemaphoreImpl,
   // 18장 본문(Threads & Concurrency) 전용 SVG 다이어그램들.
   CpuVirtTimeline,
   ThreadAnatomy,

@@ -252,6 +252,15 @@ export const chapters: ChapterMeta[] = [
     lineRange: [3380, 3380],
     loader: () => import('./22-condition-variables.mdx'),
   },
+  {
+    slug: '23-semaphore',
+    number: 23,
+    title: 'Semaphore',
+    subtitle: 'Binary/Signaling · Producer/Consumer · RW Lock · Dining · Zemaphore',
+    partId: 'concurrency',
+    lineRange: [3380, 3380],
+    loader: () => import('./23-semaphore.mdx'),
+  },
 ];
 
 export function chapterBySlug(slug: string | undefined): ChapterMeta | undefined {

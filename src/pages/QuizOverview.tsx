@@ -5,6 +5,7 @@ import * as s from '../components/Quiz/Quiz.css';
 export function QuizOverview() {
   const cpuQuizzes = quizIndex.filter((q) => q.partId === 'cpu');
   const memQuizzes = quizIndex.filter((q) => q.partId === 'memory');
+  const concurrencyQuizzes = quizIndex.filter((q) => q.partId === 'concurrency');
 
   return (
     <div className={s.page}>
@@ -44,6 +45,22 @@ export function QuizOverview() {
           ))}
         </div>
       </section>
+
+      {concurrencyQuizzes.length > 0 && (
+        <section className={s.partSection}>
+          <h2 className={s.partTitle}>Part 3. 동시성 (Concurrency)</h2>
+          <p className={s.partDesc}>Thread, lock, condition variable, semaphore.</p>
+          <div className={s.quizGrid}>
+            {concurrencyQuizzes.map((q) => (
+              <Link key={q.slug} to={`/quiz/${q.slug}`} className={s.quizCard}>
+                <span className={s.quizCardNumber}>Ch. {String(q.chapterNumber).padStart(2, '0')}</span>
+                <span className={s.quizCardTitle}>{q.title}</span>
+                {q.subtitle && <span className={s.quizCardMeta}>{q.subtitle}</span>}
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }
