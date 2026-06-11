@@ -261,6 +261,24 @@ export const chapters: ChapterMeta[] = [
     lineRange: [3380, 3380],
     loader: () => import('./23-semaphore.mdx'),
   },
+  {
+    slug: '24-common-concurrency-problems',
+    number: 24,
+    title: 'Common Concurrency Problems',
+    subtitle: 'Atomicity/Order Violation · Deadlock 4조건 · Prevention/Avoidance/Detect&Recover',
+    partId: 'concurrency',
+    lineRange: [3380, 3380],
+    loader: () => import('./24-common-concurrency-problems.mdx'),
+  },
+  {
+    slug: '25-exam-summary',
+    number: 25,
+    title: '시험 직전 정리',
+    subtitle: 'Swapping Mechanisms부터 Concurrency Bugs까지 — 전체 흐름 한눈에',
+    partId: 'concurrency',
+    lineRange: [3157, 3380],
+    loader: () => import('./25-exam-summary.mdx'),
+  },
 ];
 
 export function chapterBySlug(slug: string | undefined): ChapterMeta | undefined {

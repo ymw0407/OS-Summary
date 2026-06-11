@@ -103,6 +103,23 @@ import {
   DeadlockCycle,
   ThreadVsProcessSwitchDiagram,
 } from './components/Ch17Diagrams/Ch17Diagrams';
+import {
+  BugTaxonomy,
+  AtomicityViolationTimeline,
+  OrderViolationCompare,
+  VectorAddAllDeadlock,
+  DeadlockConditionsBreak,
+  LivelockTimeline,
+  LockVsCasInsert,
+  AvoidanceSchedule,
+  ResourceGraphDetect,
+  StrategyDecisionFlow,
+} from './components/Ch24Diagrams/Ch24Diagrams';
+import {
+  SwappingProblemChain,
+  ConcurrencyProblemChain,
+  SyncPrimitivesMap,
+} from './components/Ch25Diagrams/Ch25Diagrams';
 
 // MDXProvider accepts a loose components map; casting via `unknown` keeps it flexible
 // without pulling in MDX's generic component types.
@@ -203,4 +220,19 @@ export const mdxComponents = {
   LockCriticalSection,
   DeadlockCycle,
   ThreadVsProcessSwitchDiagram,
+  // 24장(Common Concurrency Problems) 전용 SVG.
+  BugTaxonomy,
+  AtomicityViolationTimeline,
+  OrderViolationCompare,
+  VectorAddAllDeadlock,
+  DeadlockConditionsBreak,
+  LivelockTimeline,
+  LockVsCasInsert,
+  AvoidanceSchedule,
+  ResourceGraphDetect,
+  StrategyDecisionFlow,
+  // 25장(시험 직전 정리) 전용 SVG — 문제→해결 사슬 순서도.
+  SwappingProblemChain,
+  ConcurrencyProblemChain,
+  SyncPrimitivesMap,
 } as unknown as Record<string, React.ComponentType<unknown>>;
