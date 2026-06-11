@@ -151,6 +151,34 @@ const quiz: QuizSet = {
       explanation:
         '교과서 정의 그대로. circular wait + hold-and-wait + non-preemption 이 동시에 성립하므로 외부 개입(또는 알고리즘 변경) 없이는 풀리지 않는다.',
     },
+    {
+      id: 'ch23-tf-5',
+      type: 'true-false',
+      prompt: 'sem_wait 는 값을 감소시킨 결과가 음수이면 thread 를 spin-wait 시킨다.',
+      answer: false,
+      explanation: 'spin 이 아니라 sleep(blocked state) — CPU 를 낭비하지 않도록 잠재운다. 깨우는 것은 sem_post 의 몫.',
+    },
+    {
+      id: 'ch23-tf-6',
+      type: 'true-false',
+      prompt: '초기값 0 으로 만든 semaphore 는 "아직 사건이 발생하지 않았다" 는 뜻으로, condition variable 처럼 순서 강제(ordering)에 쓸 수 있다.',
+      answer: true,
+      explanation: '기다리는 쪽 sem_wait, 사건 발생 쪽 sem_post — join 패턴. CV 와 달리 post 가 먼저 와도 값 1 로 남아 사라지지 않는다.',
+    },
+    {
+      id: 'ch23-tf-7',
+      type: 'true-false',
+      prompt: 'reader-writer lock 에서 두 번째, 세 번째로 들어오는 reader 들도 각각 writelock 을 잡는다.',
+      answer: false,
+      explanation: 'writelock 은 첫 번째 reader 만 잡고 마지막 reader 가 푼다. 중간 reader 들은 lock(카운터 보호용)을 잡고 readers 만 증감.',
+    },
+    {
+      id: 'ch23-tf-8',
+      type: 'true-false',
+      prompt: 'Zemaphore 는 semaphore 를 lock 과 condition variable 로 구현한 것으로, 두 추상화가 서로를 만들 수 있음을 보여준다.',
+      answer: true,
+      explanation: 'semaphore 로 lock/CV 역할을 할 수 있고, 거꾸로 lock+CV 로 semaphore 를 만들 수 있다 — 서로의 친척.',
+    },
 
     // ═══════════════════════════════════════════════════════════════════
     // 단답형 / Rate 계산 — PDF 표 기반
@@ -214,6 +242,24 @@ const quiz: QuizSet = {
     // ═══════════════════════════════════════════════════════════════════
     // 코드 빈칸 (Code-Blank)
     // ═══════════════════════════════════════════════════════════════════
+    {
+      id: 'ch23-cb-0',
+      type: 'code-blank',
+      prompt: 'sem_wait / sem_post 의 의사코드 — 빈칸을 채워라.',
+      language: 'c',
+      segments: [
+        { kind: 'text', text: 'int sem_wait(sem_t *s) {\n    decrement the value of semaphore s by one;\n    ' },
+        { kind: 'blank', answers: ['wait', 'wait (sleep)', 'sleep'], width: 6 },
+        { kind: 'text', text: ' if value of semaphore s is ' },
+        { kind: 'blank', answers: ['negative', '음수'], width: 10 },
+        { kind: 'text', text: ';\n}\n\nint sem_post(sem_t *s) {\n    ' },
+        { kind: 'blank', answers: ['increment', 'increment the value'], width: 11 },
+        { kind: 'text', text: ' the value of semaphore s by one;\n    if there are one or more threads waiting, wake ' },
+        { kind: 'blank', answers: ['one', '하나'], width: 5 },
+        { kind: 'text', text: ';\n}' },
+      ],
+      explanation: 'wait = 값 -1, 음수면 sleep. post = 값 +1, 대기자가 있으면 하나를 깨움. 음수의 절댓값 = 대기 thread 수.',
+    },
     {
       id: 'ch23-cb-1',
       type: 'code-blank',

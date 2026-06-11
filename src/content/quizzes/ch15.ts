@@ -1,291 +1,308 @@
 import type { QuizSet } from './types';
 
 const quiz: QuizSet = {
-  slug: '15-memory-summary',
+  slug: '15-swapping-mechanisms',
   chapterNumber: 15,
-  title: '메모리 가상화 정리',
-  description: 'Base/Bound 부터 Multi-Level 까지 전체 흐름 점검.',
+  title: 'Swapping: Mechanisms',
+  description: 'Present bit, page fault control flow(①~⑥), lazy vs daemon, demand paging vs swapping까지 — 강의 코드 빈칸 포함.',
   questions: [
-    // ── 객관식 ─────────────────────────────────────────
-    {
-      id: 'ch15-mc-1',
-      type: 'multiple-choice',
-      prompt:
-        '다음 기법을 "시간 vs 공간" 의 트레이드오프 축에서 볼 때 짝이 올바르게 묶인 것은?',
-      options: [
-        { text: 'TLB : 시간을 아낌 / Multi-Level : 공간을 아낌' },
-        { text: 'TLB : 공간을 아낌 / Multi-Level : 시간을 아낌' },
-        { text: '둘 다 공간을 아낀다.' },
-        { text: '둘 다 시간을 아낀다.' },
-      ],
-      answerIndex: 0,
-      explanation:
-        'TLB 는 번역 시간을 줄이고, Multi-Level 은 table 공간을 줄인다. 각각 반대 축의 비용을 대신 지불한다.',
-    },
-    {
-      id: 'ch15-mc-2',
-      type: 'multiple-choice',
-      prompt:
-        '다음 중 "가변 크기 할당" 이 "고정 크기 할당" 으로 전환된 가장 중요한 이유는?',
-      options: [
-        { text: '가변 크기는 구현이 복잡하기 때문' },
-        { text: '가변 크기는 external fragmentation 을 근본적으로 해결하기 어렵기 때문' },
-        { text: '가변 크기는 보호가 약하기 때문' },
-        { text: '가변 크기는 TLB 와 호환되지 않기 때문' },
-      ],
-      answerIndex: 1,
-      explanation:
-        '가변 크기 할당의 단편화를 극복하려고 고정 크기 paging 이 등장했다.',
-    },
-    {
-      id: 'ch15-mc-3',
-      type: 'multiple-choice',
-      prompt:
-        '메모리 가상화 변천사를 큰 흐름으로 가장 잘 표현한 것은?',
-      options: [
-        { text: 'Base/Bound → Segmentation → Paging → TLB → Multi-Level' },
-        { text: 'Paging → TLB → Base/Bound → Segmentation' },
-        { text: 'Segmentation → Base/Bound → Multi-Level → Paging' },
-        { text: 'TLB → Multi-Level → Paging → Base/Bound' },
-      ],
-      answerIndex: 0,
-      explanation:
-        '거친 재배치 → 논리 단위 분할 → 고정 크기 → 번역 가속 → 공간 절약.',
-    },
-
-    // ── 코드 빈칸 ─────────────────────────────────────
-    {
-      id: 'ch15-code-1',
-      type: 'code-blank',
-      language: 'c',
-      prompt:
-        '메모리 가상화의 마지막 통합: TLB + Multi-Level page table. TLB hit 와 miss 분기를 채우시오.',
-      segments: [
-        { kind: 'text', text: 'uint32_t translate(uint32_t va) {\n    // 1) TLB 조회\n    tlb_entry_t *e = tlb_lookup(va >> SHIFT);\n    if (e) return (e->pfn << SHIFT) | (va & OFFSET_MASK);\n\n    // 2) Miss → Multi-level walk\n    pde_t pde = page_dir[(va >> PD_SHIFT) & PD_MASK];\n    if (!pde.valid) raise_fault();\n\n    pte_t *pt = (pte_t *)(pde.pfn << SHIFT);\n    pte_t pte = pt[(va >> PT_SHIFT) & PT_MASK];\n    if (!pte.valid) raise_fault();\n\n    // 3) TLB 에 채우고 재시도\n    tlb_' },
-        { kind: 'blank', answers: ['insert', 'add', 'fill'], width: 8 },
-        { kind: 'text', text: '(va >> SHIFT, pte.pfn);\n    return (pte.pfn << SHIFT) | (va & ' },
-        { kind: 'blank', answers: ['OFFSET_MASK', '0xFFF'], width: 14 },
-        { kind: 'text', text: ');\n}\n' },
-      ],
-      explanation:
-        'TLB 는 시간, Multi-Level 은 공간을 담당하며 서로 보완한다.',
-    },
-    {
-      id: 'ch15-code-2',
-      type: 'code-blank',
-      language: 'c',
-      prompt:
-        '각 가상화 기법이 푼 핵심 문제를 상수로 정리.',
-      segments: [
-        { kind: 'text', text: 'const char *BASE_BOUND_SOLVES    = "protection + relocation";\nconst char *SEGMENTATION_SOLVES  = "' },
-        { kind: 'blank', answers: ['sparse address space', 'sparse', 'sparse AS'], width: 22 },
-        { kind: 'text', text: '";\nconst char *PAGING_SOLVES        = "external fragmentation";\nconst char *TLB_SOLVES           = "' },
-        { kind: 'blank', answers: ['translation overhead', 'translation', 'slow translation'], width: 22 },
-        { kind: 'text', text: '";\nconst char *MULTILEVEL_SOLVES    = "page table space";\n' },
-      ],
-      explanation:
-        '각 단계가 이전 단계가 남긴 문제를 푸는 "문제→해결→한계" 사슬.',
-    },
-
-    // ── True / False ─────────────────────────────────
+    // ═══════════════════════════════════════════════════════════════════
+    // True / False
+    // ═══════════════════════════════════════════════════════════════════
     {
       id: 'ch15-tf-1',
       type: 'true-false',
-      prompt:
-        'Paging 이 external fragmentation 을 해결하지만, 대신 internal fragmentation 과 번역 오버헤드를 도입한다.',
-      answer: true,
+      prompt: 'page fault 는 프로세스가 잘못된(불법적인) 주소에 접근했을 때 발생하는 오류다.',
+      answer: false,
+      explanation:
+        'valid = 1 인 합법적 주소인데 지금 physical memory 에 없을 뿐(present = 0). "유효하지만 disk 에 있으니 가져와야 한다" 는 신호이지 잘못된 접근이 아니다. 잘못된 주소(valid = 0)는 segmentation fault.',
     },
     {
       id: 'ch15-tf-2',
       type: 'true-false',
-      prompt:
-        '메모리 가상화의 모든 단계는 공간(space)을 줄이는 방향으로만 진화해 왔다.',
-      answer: false,
-      explanation:
-        '공간을 줄이는 것(Multi-Level, Inverted) 과 시간을 줄이는 것(TLB) 이 번갈아 등장했다.',
+      prompt: 'swap space 에 내려가 있는 page 도 여전히 "어떤 프로세스의 어떤 VPN" 에 해당한다.',
+      answer: true,
+      explanation: '단지 현재 physical memory 에 없을 뿐, (Proc, VPN) 정체성은 유지된다.',
     },
     {
       id: 'ch15-tf-3',
       type: 'true-false',
-      prompt:
-        'Multi-Level Page Table 은 TLB 가 있기 때문에 실전에서 감당 가능한 비용을 가진다.',
-      answer: true,
+      prompt: 'swap out 되었던 page 가 다시 swap in 될 때는 이전에 쓰던 것과 같은 PFN 으로 돌아온다는 보장이 있다.',
+      answer: false,
       explanation:
-        'TLB hit rate 가 높으면 단계 수가 늘어난 비용이 실효 거의 나타나지 않는다.',
+        '비어 있던 frame 은 그 사이 다른 page 가 쓸 수 있다. swap in 때마다 free frame 을 새로 확보하고 PTE.PFN 을 갱신해야 한다.',
     },
     {
       id: 'ch15-tf-4',
       type: 'true-false',
-      prompt:
-        'Segmentation + Paging(Hybrid) 방식은 오늘날 x86/ARM 같은 주류 아키텍처의 기본 메모리 모델이다.',
-      answer: false,
-      explanation:
-        '현대 x86/ARM 은 flat paging 위주. 세그먼트는 거의 쓰이지 않거나 플레이스홀더로 남았다.',
+      prompt: '어떤 page 가 swap out 되면 그 page 에 대한 기존 TLB entry 도 무효화해야 한다.',
+      answer: true,
+      explanation: 'TLB 가 옛 VPN→PFN 매핑을 계속 들고 있으면 잘못된 physical memory 에 접근하게 된다.',
     },
-
-    // ── 단답 ───────────────────────────────────────
-    {
-      id: 'ch15-short-1',
-      type: 'short-answer',
-      prompt:
-        '"가변 크기 할당의 고질병" 으로 paging 등장의 결정적 원인이 된 단편화 유형은? (영문)',
-      answers: ['external fragmentation', '외부 단편화', 'External Fragmentation'],
-      explanation: '외부 단편화가 paging 의 동기.',
-    },
-    {
-      id: 'ch15-short-2',
-      type: 'short-answer',
-      prompt:
-        'TLB 가 존재하지 않고 2 단계 page table 만 있을 때, 한 번의 가상 주소 접근에 필요한 물리 메모리 접근 횟수는? (숫자만, 데이터 접근 포함)',
-      answers: ['3'],
-      hint: 'PDE + PTE + data',
-      explanation: 'TLB 가 없으면 매 번역마다 PDE + PTE + data = 3 회.',
-    },
-
-    // ── 서술형 ────────────────────────────────────────
-    {
-      id: 'ch15-essay-1',
-      type: 'essay',
-      prompt:
-        '"메모리 가상화의 변천사" 를 "문제 → 해결 → 그 해결이 낳은 새 문제" 구조로 이어 서술하시오.',
-      modelAnswer:
-        '초기엔 OS + 단일 프로세스만 있어 가상화가 필요 없었다. 멀티프로그래밍이 도입되자 보호와 재배치가 문제가 됐다 → Base/Bound 레지스터로 간단히 해결. 그러나 주소 공간 전체를 연속 블록으로 잡는 낭비가 문제 → Segmentation 으로 논리 단위별 분할. 이번엔 가변 크기 배치로 인한 external fragmentation 이 문제 → Paging(고정 크기) 으로 근본적 해소. 그러나 매 접근마다 page table 조회로 번역 오버헤드 2 배 → TLB 로 locality 활용해 상쇄. TLB 는 속도 문제를 풀었지만 page table 자체가 프로세스당 MB 단위로 커지는 공간 문제는 남음 → Multi-Level Page Table 로 sparse 주소 공간에 비례한 공간 사용. 64-bit 에서는 단계를 더 깊게(3, 4 단계) 사용. Inverted Page Table 은 관점을 뒤집어 물리 메모리 크기에 비례한 단일 테이블로 더 큰 절약을 노리지만, VPN→PFN 검색 비용이 커지는 시간·공간 트레이드오프를 다시 드러낸다.',
-      rubric: [
-        '각 단계가 앞 단계의 문제를 해결',
-        '해결이 또 다른 문제(시간/공간) 를 남김',
-        '마지막에 시간↔공간 축 교차 반복을 언급',
-      ],
-    },
-    {
-      id: 'ch15-essay-2',
-      type: 'essay',
-      prompt:
-        '현대 리눅스의 x86_64 시스템에서 가상 주소 하나가 번역되어 데이터 접근까지 이르는 전 과정을 설명하시오 (TLB 포함, 4단계 페이지 테이블 가정).',
-      modelAnswer:
-        '1) CPU 가 가상 주소 VA 로 메모리에 접근하려 한다.\n2) MMU 의 TLB 가 (VPN, ASID) 키로 조회된다. hit 면 바로 PFN 을 얻어 offset 과 결합해 물리 주소 PA 로 접근한다 (사실상 1 사이클).\n3) miss 면 page table walk 가 시작된다. 4단계 경우 PGD → (P4D) → PUD → PMD → PTE 순으로 각 단계의 테이블에서 해당 인덱스의 엔트리를 읽어 내려가, 유효하지 않으면 page fault 를 일으킨다.\n4) 최종 PTE 에서 PFN 을 얻고, TLB 에 (VPN, ASID, PFN) 을 채워 다음 접근에 대비한다.\n5) PFN 과 offset 을 결합한 PA 로 실제 데이터를 읽거나 쓴다.\n6) 쓰기였다면 PTE 의 Dirty 비트가, 어떤 접근이든 Accessed 비트가 갱신될 수 있다(OS 또는 HW).\n7) Context switch 시에는 ASID 가 바뀌어 다른 프로세스의 TLB 엔트리와 자동으로 구분된다.',
-      rubric: [
-        'TLB hit / miss 분기',
-        'Multi-level walk 와 각 단계에서의 valid 검사',
-        '데이터 접근 및 상태 비트 갱신',
-        'ASID / context switch 와의 관계(선택)',
-      ],
-    },
-
-    // ── 추가 : 객관식 ─────────────────────
-    {
-      id: 'ch15-mc-4',
-      type: 'multiple-choice',
-      prompt:
-        '다음 중 "시간 ↔ 공간" 의 대표적 트레이드오프 짝이 아닌 것은?',
-      options: [
-        { text: 'Multi-level page table (공간 절약) vs TLB miss 시 추가 메모리 접근 (시간 비용)' },
-        { text: 'Inverted page table (공간 절약) vs VPN → PFN 조회 어려움 (시간 비용)' },
-        { text: 'TLB (시간 절약) vs MMU 내부 캐시 자원 소비 (공간 비용)' },
-        { text: 'Segmentation (공간 절약) vs TLB 자체 크기 감소 (시간 비용)' },
-      ],
-      answerIndex: 3,
-      explanation: 'Segmentation 은 TLB 크기와 직접 관련이 없다. 나머지 셋이 전형적 트레이드오프.',
-    },
-    {
-      id: 'ch15-mc-5',
-      type: 'multiple-choice',
-      prompt:
-        '메모리 가상화의 "protection → relocation → sparse → fixed → speed → small" 전체 흐름을 관통하는 공통 주제는?',
-      options: [
-        { text: '하드웨어와 OS 가 함께 풀어야 하는 보호·효율 문제' },
-        { text: '프로그래머가 직접 물리 메모리를 관리하게 하는 방향' },
-        { text: '가상화를 없애고 단순화' },
-        { text: '스토리지 계층으로의 이관' },
-      ],
-      answerIndex: 0,
-      explanation: '가상화는 항상 HW/OS 협력 구조 위에서 진화해 왔다.',
-    },
-
-    // ── 추가 : 코드 빈칸 ──────────────────
-    {
-      id: 'ch15-code-3',
-      type: 'code-blank',
-      language: 'c',
-      prompt:
-        '번역 비용 추정: TLB hit rate h, miss 시 추가 접근 비용 m 이다. 평균 번역 비용 식을 채우시오.',
-      segments: [
-        { kind: 'text', text: 'double avg_cost = ' },
-        { kind: 'blank', answers: ['h * 0', '0', '0.0'], width: 6 },
-        { kind: 'text', text: ' + (1 - ' },
-        { kind: 'blank', answers: ['h'], width: 3 },
-        { kind: 'text', text: ') * m;\n// 즉, (1 - h) * m\n' },
-      ],
-      explanation: 'hit 면 비용 0, miss 면 m → 기댓값 (1-h)·m.',
-    },
-
-    // ── 추가 : True / False ─────────────
     {
       id: 'ch15-tf-5',
       type: 'true-false',
-      prompt:
-        '4 단계 page table 에서 TLB miss 당 추가 메모리 접근은 최대 4 회다 (데이터 접근은 제외).',
-      answer: true,
+      prompt: 'page fault 가 발생하면 그 처리는 하드웨어(MMU)가 끝까지 수행한다.',
+      answer: false,
+      explanation:
+        '하드웨어는 "지금 DRAM 에 없다(present=0)" 까지만 판단하고 trap 을 일으킨다. disk 어디서 가져올지, frame 확보, PTE 갱신은 모두 OS 의 page fault handler 몫.',
     },
     {
       id: 'ch15-tf-6',
       type: 'true-false',
-      prompt:
-        'Inverted page table 은 TLB 의 필요성을 없앤다.',
+      prompt: 'demand paging 의 대상 page 는 "예전에 DRAM 에 있다가 쫓겨난" page 다.',
       answer: false,
-      explanation: 'TLB 는 번역 시간을 줄이기 위한 별개 계층. 테이블 구조와 무관하게 여전히 필요.',
+      explanation:
+        '그건 swapping. demand paging 은 아직 한 번도 DRAM 에 올라온 적 없는 page 를 접근 시점에 처음 올리는 전략이다.',
     },
     {
       id: 'ch15-tf-7',
       type: 'true-false',
-      prompt:
-        'huge page 는 같은 물리 메모리 범위를 가리키는 데 필요한 TLB 엔트리 수를 줄여, 큰 워킹셋 프로그램의 TLB 압박을 완화할 수 있다.',
+      prompt: 'swap daemon 은 free page 수가 low watermark 아래로 떨어지면 깨어나고, high watermark 위로 회복되면 멈춘다.',
       answer: true,
+      explanation: 'LW 아래 → daemon 시작, HW 회복 → 정지. 꽉 차기 전에 background 에서 미리 여유 frame 을 확보한다.',
     },
     {
       id: 'ch15-tf-8',
       type: 'true-false',
-      prompt:
-        '메모리 가상화의 역사는 "외부 단편화를 없애기 위해 가변 크기를 버리고 고정 크기로 간 뒤에도, 테이블의 공간·시간 비용을 번갈아 개선" 하는 방향으로 진행되어 왔다.',
+      prompt: 'page fault 가 나면 데이터는 무조건 swap space 에서 가져온다.',
+      answer: false,
+      explanation:
+        'backing store 는 경우에 따라 다르다 — swap-out 된 anonymous page 는 swap space, file-backed page 는 원본 파일, 새 anonymous page 는 zero-fill. 어디서 가져올지는 OS 가 PTE/VMA metadata 를 보고 결정.',
+    },
+    {
+      id: 'ch15-tf-9',
+      type: 'true-false',
+      prompt: 'present = 0 인 PTE 에서 PFN 필드 자리는 disk 주소(swap slot)로 의미를 바꿔 재활용되는 경우가 많다.',
       answer: true,
+      explanation: 'present = 1 이면 PFN, present = 0 이면 disk address 로 해석 — 같은 비트 자리를 상태에 따라 다르게 쓴다.',
+    },
+    {
+      id: 'ch15-tf-10',
+      type: 'true-false',
+      prompt: 'Lazy approach (메모리가 완전히 꽉 찰 때까지 기다렸다가 evict) 는 매 요청마다 disk write 가 끼어들 수 있어 비현실적이다.',
+      answer: true,
+      explanation:
+        '한 번 꽉 차면 이후에도 계속 꽉 찬 상태가 유지되어, 요청 → evict(disk I/O) → 적재가 반복된다. 그래서 watermark 기반 daemon 으로 미리 확보한다.',
     },
 
-    // ── 추가 : 단답 ───────────────────────
+    // ═══════════════════════════════════════════════════════════════════
+    // 객관식
+    // ═══════════════════════════════════════════════════════════════════
     {
-      id: 'ch15-short-3',
-      type: 'short-answer',
-      prompt:
-        'TLB hit rate 99%, miss cost 100 사이클이라면 평균 번역 오버헤드는 몇 사이클인가? (숫자만)',
-      answers: ['1', '1 사이클'],
-      hint: '(1-h) · m',
-      explanation: '0.01 × 100 = 1 사이클.',
-    },
-    {
-      id: 'ch15-short-4',
-      type: 'short-answer',
-      prompt:
-        '메모리 가상화에서 "시간↔공간" 트레이드오프의 예를 하나 들어 한 줄로 쓰시오.',
-      answers: [
-        'Multi-Level page table: 공간을 아끼는 대신 TLB miss 시간 비용이 증가',
-        'TLB: 번역 시간을 줄이는 대신 MMU 내부 공간을 소비',
-        'Inverted page table: 테이블 공간을 크게 줄이는 대신 lookup 시간이 증가',
-        'huge page: TLB 공간 효율은 올리지만 internal fragmentation 이 커짐',
+      id: 'ch15-mc-1',
+      type: 'multiple-choice',
+      prompt: 'valid bit 와 present bit 의 의미가 올바르게 짝지어진 것은?',
+      options: [
+        { text: 'valid: 메모리에 있는가 / present: 합법적인 주소인가' },
+        { text: 'valid: 합법적인 주소인가 / present: 지금 physical memory 에 있는가' },
+        { text: '둘 다 "메모리에 있는가" 를 뜻하며 호환된다' },
+        { text: 'valid: 읽기 권한 / present: 쓰기 권한' },
       ],
-      hint: '가상화 기법 하나를 시간/공간 측면에서',
-      explanation: '여러 정답 가능. 위 예시들 모두 허용.',
+      answerIndex: 1,
+      explanation:
+        'valid = 0 → 애초에 접근하면 안 되는 주소(segfault). present = 0 → 합법적이지만 지금은 disk 에 있음(page fault).',
+    },
+    {
+      id: 'ch15-mc-2',
+      type: 'multiple-choice',
+      prompt: 'TLB miss 후 page table 을 확인할 때 하드웨어의 검사 순서로 올바른 것은?',
+      options: [
+        { text: 'Present → Valid → Protection' },
+        { text: 'Protection → Present → Valid' },
+        { text: 'Valid → Protection → Present' },
+        { text: 'Valid → Present → Protection' },
+      ],
+      answerIndex: 2,
+      explanation:
+        '합법적인 주소인지(Valid) → 권한이 있는지(Protection) → 메모리에 있는지(Present) 순. present 는 앞의 둘을 통과한 뒤에만 의미가 있다.',
+    },
+    {
+      id: 'ch15-mc-3',
+      type: 'multiple-choice',
+      prompt: 'Page Fault Control Flow 그림의 ①~⑥ 단계 순서로 올바른 것은?',
+      options: [
+        { text: 'Reference → Trap → Check → Get the page → Reset Page Table → Re-instruction' },
+        { text: 'Trap → Reference → Get the page → Check → Re-instruction → Reset Page Table' },
+        { text: 'Reference → Check → Trap → Reset Page Table → Get the page → Re-instruction' },
+        { text: 'Reference → Trap → Get the page → Check → Reset Page Table → Re-instruction' },
+      ],
+      answerIndex: 0,
+      explanation:
+        '① 참조 → ② present=0 으로 trap → ③ OS 가 swap 위치 확인 → ④ disk 에서 page 읽어오기 → ⑤ PTE 갱신(present=1, 새 PFN) → ⑥ 같은 instruction 재실행.',
+    },
+    {
+      id: 'ch15-mc-4',
+      type: 'multiple-choice',
+      prompt: 'page fault 처리 후 RetryInstruction (재실행) 이 필요한 이유는?',
+      options: [
+        { text: 'TLB 를 비우기 위해서' },
+        { text: 'disk 에서 읽은 데이터를 검증하기 위해서' },
+        { text: 'fault 를 일으킨 instruction 은 완료되지 못했으므로 같은 PC 에서 다시 실행해야 하기 때문' },
+        { text: '다음 instruction 부터 이어서 실행하기 위해서' },
+      ],
+      answerIndex: 2,
+      explanation:
+        'OS 가 page 를 올려 줬다고 원래 instruction 이 자동으로 완료되는 게 아니다. 이번에는 present = 1 이므로 같은 instruction 이 정상 수행된다.',
+    },
+    {
+      id: 'ch15-mc-5',
+      type: 'multiple-choice',
+      prompt: 'Demand Paging 과 Swapping 의 공통점으로 옳은 것은?',
+      options: [
+        { text: '둘 다 page 가 예전에 DRAM 에 있다가 쫓겨난 경우다' },
+        { text: '둘 다 present = 0 인 page 접근 시 page fault 로 처리되고, handler 가 적재 후 instruction 을 재실행한다' },
+        { text: '둘 다 데이터를 swap space 에서 가져온다' },
+        { text: '둘 다 disk read 없이 zero-fill 로 처리된다' },
+      ],
+      answerIndex: 1,
+      explanation:
+        '메커니즘(present=0 → page fault → 적재 → 재실행)은 공통. 차이는 출처 — demand paging 은 실행 파일/mmap/zero-fill, swapping 은 swap space.',
+    },
+    {
+      id: 'ch15-mc-6',
+      type: 'multiple-choice',
+      prompt: 'physical memory 도 꽉 차고 swap space 도 꽉 찼을 때 일어날 수 있는 일이 아닌 것은?',
+      options: [
+        { text: 'memory allocation 실패' },
+        { text: 'OOM(Out-Of-Memory) killer 동작' },
+        { text: '프로세스 강제 종료' },
+        { text: 'OS 가 자동으로 page 크기를 절반으로 줄여 공간을 확보' },
+      ],
+      answerIndex: 3,
+      explanation: 'page 크기를 동적으로 줄이는 메커니즘은 없다. 더 내보낼 곳이 없으면 할당 실패·OOM killer·시스템 멈춤으로 이어진다.',
+    },
+    {
+      id: 'ch15-mc-7',
+      type: 'multiple-choice',
+      prompt: 'malloc 으로 받은 새 anonymous page 에 처음 접근해서 page fault 가 났다. 데이터는 어디서 오는가?',
+      options: [
+        { text: 'swap space 에서 읽어온다' },
+        { text: '실행 파일에서 읽어온다' },
+        { text: '가져올 데이터 자체가 없으므로 disk read 없이 zero-fill 된 frame 을 받는다' },
+        { text: 'segmentation fault 가 발생한다' },
+      ],
+      answerIndex: 2,
+      explanation: '아직 한 번도 쓰인 적 없는 page 라 disk 에 사본이 없다. OS 는 0 으로 채운 새 frame 을 매핑해 준다.',
     },
 
-    // ── 추가 : 서술형 ─────────────────────
+    // ═══════════════════════════════════════════════════════════════════
+    // 단답형
+    // ═══════════════════════════════════════════════════════════════════
     {
-      id: 'ch15-essay-3',
+      id: 'ch15-sa-1',
+      type: 'short-answer',
+      prompt: 'page 를 physical memory 와 disk 사이에서 옮기기 위해 disk 에 따로 예약해 둔 공간의 이름은? (영문)',
+      answers: ['swap space', 'swapspace', 'swap'],
+      hint: '○○ space',
+      explanation: 'swap space — page-sized unit 으로 관리된다.',
+    },
+    {
+      id: 'ch15-sa-2',
+      type: 'short-answer',
+      prompt: 'free page 를 미리 확보하기 위해 background 에서 도는 OS thread 의 이름은? (영문, 두 이름 중 하나)',
+      answers: ['swap daemon', 'page daemon', 'swapdaemon', 'pagedaemon'],
+      hint: '○○ daemon',
+      explanation: 'swap daemon 또는 page daemon. Linux 에서는 kswapd 가 이 역할.',
+    },
+    {
+      id: 'ch15-sa-3',
+      type: 'short-answer',
+      prompt: 'daemon 이 깨어나는 기준선(이 아래로 free page 가 떨어지면 시작)의 이름은? (영문)',
+      answers: ['low watermark', 'lw', 'low watermark (lw)'],
+      hint: '반대쪽 기준선은 high watermark',
+      explanation: 'Low Watermark(LW) 아래로 떨어지면 daemon 이 깨어나 High Watermark(HW)까지 회복시킨다.',
+    },
+    {
+      id: 'ch15-sa-4',
+      type: 'short-answer',
+      prompt: 'PTE 의 어떤 bit 가 0 이면 "유효한 page 인데 지금은 disk 에 있다" 는 뜻인가? (영문 bit 이름)',
+      answers: ['present bit', 'present'],
+      hint: 'valid 와 헷갈리지 말 것',
+      explanation: 'present bit = 0 → page fault. valid bit = 0 → segmentation fault.',
+    },
+
+    // ═══════════════════════════════════════════════════════════════════
+    // 코드 빈칸 — 강의 Page Fault Control Flow 코드
+    // ═══════════════════════════════════════════════════════════════════
+    {
+      id: 'ch15-cb-1',
+      type: 'code-blank',
+      prompt: 'Page Fault Control Flow (Hardware) — TLB miss 이후 PTE 검사 분기. 각 분기에서 발생하는 exception/동작을 채워라.',
+      language: 'c',
+      segments: [
+        { kind: 'text', text: 'PTEAddr = PTBR + (VPN * sizeof(PTE));\nPTE     = AccessMemory(PTEAddr);\n\nif (PTE.Valid == False) {\n    RaiseException(' },
+        { kind: 'blank', answers: ['SEGMENTATION_FAULT', 'segmentation_fault'], width: 22 },
+        { kind: 'text', text: ');\n} else if (CanAccess(PTE.ProtectBits) == False) {\n    RaiseException(PROTECTION_FAULT);\n} else if (PTE.Present == True) {\n    ' },
+        { kind: 'blank', answers: ['TLB_Insert(VPN, PTE.PFN, PTE.ProtectBits)', 'TLB_Insert(VPN, PTE.PFN, PTE.ProtectBits);'], width: 42 },
+        { kind: 'text', text: ';\n    RetryInstruction();\n} else {\n    // valid = 1, protection OK, present = 0\n    RaiseException(' },
+        { kind: 'blank', answers: ['PAGE_FAULT', 'page_fault'], width: 14 },
+        { kind: 'text', text: ');\n}' },
+      ],
+      explanation:
+        'Valid → Protection → Present 순서로 검사. valid=0 은 SEGMENTATION_FAULT, present=1 이면 TLB 에 넣고 재시도, present=0 이면 PAGE_FAULT.',
+    },
+    {
+      id: 'ch15-cb-2',
+      type: 'code-blank',
+      prompt: 'Page Fault Control Flow (Software) — OS handler 의 ③~⑥ 단계. 빈칸을 채워라.',
+      language: 'c',
+      segments: [
+        { kind: 'text', text: 'DiskAddr = PTE.DiskAddr;             // ③ swap 위치 확인\n\nPFN = FindFreePhysicalPage();\nif (PFN == -1) {\n    PFN = ' },
+        { kind: 'blank', answers: ['EvictPage()', 'EvictPage();'], width: 14 },
+        { kind: 'text', text: ';          // replacement algorithm\n}\n\n' },
+        { kind: 'blank', answers: ['DiskRead(DiskAddr, PFN)', 'DiskRead(DiskAddr, PFN);'], width: 26 },
+        { kind: 'text', text: ';      // ④ disk I/O 동안 프로세스는 sleep\n\nPTE.Present = ' },
+        { kind: 'blank', answers: ['True', 'true', '1'], width: 8 },
+        { kind: 'text', text: ';                  // ⑤ PTE 갱신\nPTE.PFN     = PFN;\n\n' },
+        { kind: 'blank', answers: ['RetryInstruction()', 'RetryInstruction();'], width: 22 },
+        { kind: 'text', text: ';            // ⑥ 같은 instruction 재실행' },
+      ],
+      explanation:
+        '빈 frame 이 없으면 EvictPage() 로 victim 을 내보내 확보 → DiskRead 로 swap 의 page 를 읽어옴 → PTE.Present = True, 새 PFN 기록 → RetryInstruction.',
+    },
+    {
+      id: 'ch15-cb-3',
+      type: 'code-blank',
+      prompt: 'Lazy Approach 와 Page Daemon 비교 표 — 빈칸을 채워라.',
+      language: 'text',
+      segments: [
+        { kind: 'text', text: '            | Lazy Approach              | Page Daemon\n시점        | memory 가 완전히 ' },
+        { kind: 'blank', answers: ['찰 때까지 기다림', '꽉 찰 때까지 기다림', '찰 때까지'], width: 18 },
+        { kind: 'text', text: ' | 완전히 차기 전에 미리 동작\n처리        | 필요할 때마다 page 하나     | background 에서 ' },
+        { kind: 'blank', answers: ['여러 page', '여러 page를', '여러'], width: 12 },
+        { kind: 'text', text: ' 내보냄\n영향        | 요청한 프로세스가 ' },
+        { kind: 'blank', answers: ['disk I/O', 'disk i/o', '디스크 I/O'], width: 12 },
+        { kind: 'text', text: ' 를 기다림 | free frame 을 일정 수준 이상 유지' },
+      ],
+      explanation: 'Lazy 는 단순하지만 요청 경로에 disk I/O 가 끼고, daemon 은 watermark 사이에서 미리 회수해 대기 시간을 줄인다.',
+    },
+
+    // ═══════════════════════════════════════════════════════════════════
+    // 서술형
+    // ═══════════════════════════════════════════════════════════════════
+    {
+      id: 'ch15-essay-1',
       type: 'essay',
       prompt:
-        '가상화 계층들(Base/Bound, Segmentation, Paging, TLB, Multi-Level) 의 "남은 문제 → 다음 기법" 연쇄를 간결히 도식화하고, 한 문장씩 설명하시오.',
-      modelAnswer:
-        'Base/Bound → (전체 연속 블록 필요 → 빈 공간 낭비) → Segmentation\nSegmentation → (가변 크기 external fragmentation) → Paging\nPaging → (매 번역마다 2 배 접근 비용) → TLB\nPaging + TLB → (프로세스당 page table 4MB+ 공간 낭비) → Multi-Level Page Table\nMulti-Level → (단계 수만큼 TLB miss 비용 증가) → huge page / 더 빠른 page walker / inverted 등 다양한 보완\n\n각 단계는 "앞 단계가 풀지 못한 남은 문제" 를 겨냥하고, 그 해결책이 다시 새로운 문제를 만들었다. 메모리 가상화의 역사는 한 번에 완성된 것이 아니라 이런 문제 → 해결 → 남은 문제의 반복 위에서 점진적으로 쌓인 결과물이다.',
+        'CPU 가 어떤 virtual address 를 참조했는데 해당 page 가 swap space 에 있다. 이때 일어나는 일을 page fault 발생부터 instruction 재실행까지 단계별로 서술하라. (하드웨어가 하는 일과 OS 가 하는 일을 구분할 것)',
+      modelAnswer: [
+        '[하드웨어 — ①②]',
+        '1. (① Reference) CPU/MMU 가 VPN 을 뽑아 TLB 를 확인한다. miss 면 page table 에서 PTE 를 읽는다.',
+        '2. 검사 순서는 Valid → Protection → Present. valid=1, 권한 OK, present=0 이므로 PAGE_FAULT exception 을 일으킨다 (② Trap). kernel mode 로 진입하며 OS 의 page fault handler 가 실행된다.',
+        '',
+        '[OS — ③④⑤⑥]',
+        '3. (③ Check) handler 는 PTE(또는 별도 자료구조)에서 이 page 가 swap space 의 어느 disk 주소에 있는지 확인한다. present=0 이므로 PFN 필드 자리는 disk 주소로 재해석된다.',
+        '4. (준비) free frame 을 찾고, 없으면 replacement policy 로 victim 을 골라 evict 해서 frame 을 확보한다 (victim 이 dirty 면 disk 에 먼저 써야 함).',
+        '5. (④ Get the page) DiskRead(DiskAddr, PFN) 으로 swap 의 page 를 확보한 frame 으로 읽어온다. disk I/O 동안 프로세스는 sleep (blocked) 상태가 되고 다른 프로세스가 실행될 수 있다.',
+        '6. (⑤ Reset Page Table) PTE.Present = True, PTE.PFN = 새 PFN 으로 갱신한다. (같은 PFN 으로 돌아온다는 보장이 없으므로 반드시 갱신)',
+        '7. (⑥ Re-instruction) fault 를 일으킨 instruction 을 같은 PC 에서 재실행한다. 이번에는 present=1 이므로 (TLB miss → TLB insert 를 거쳐) 정상적으로 메모리에 접근한다.',
+      ].join('\n'),
       rubric: [
-        '다섯 단계의 연쇄 명확',
-        '각 해결이 남긴 문제 구체 언급',
-        'huge page / inverted / page walker 등 후속 보완 언급(선택)',
+        '하드웨어의 검사 순서(Valid → Protection → Present)와 trap 발생을 구분해 서술',
+        'free frame 확보(없으면 evict) 과정 포함',
+        'disk I/O 동안 프로세스가 sleep 한다는 점',
+        'PTE 갱신(present=1, 새 PFN)과 재실행(RetryInstruction)으로 마무리',
       ],
     },
   ],
