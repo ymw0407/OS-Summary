@@ -116,10 +116,22 @@ import {
   StrategyDecisionFlow,
 } from './components/Ch24Diagrams/Ch24Diagrams';
 import {
+  NameVsInode,
+  PathResolutionWalk,
+  FdToDiskChain,
+  OffsetIndependence,
+  ForkDupShare,
+  WriteBufferFsync,
+  SafeSaveRename,
+  HardLinkCount,
+  SymlinkDangling,
+} from './components/Ch25Diagrams/Ch25Diagrams';
+import {
   SwappingProblemChain,
   ConcurrencyProblemChain,
+  PersistenceProblemChain,
   SyncPrimitivesMap,
-} from './components/Ch25Diagrams/Ch25Diagrams';
+} from './components/Ch26Diagrams/Ch26Diagrams';
 
 // MDXProvider accepts a loose components map; casting via `unknown` keeps it flexible
 // without pulling in MDX's generic component types.
@@ -231,8 +243,19 @@ export const mdxComponents = {
   AvoidanceSchedule,
   ResourceGraphDetect,
   StrategyDecisionFlow,
-  // 25장(시험 직전 정리) 전용 SVG — 문제→해결 사슬 순서도.
+  // 25장(Files and Directories) 전용 SVG.
+  NameVsInode,
+  PathResolutionWalk,
+  FdToDiskChain,
+  OffsetIndependence,
+  ForkDupShare,
+  WriteBufferFsync,
+  SafeSaveRename,
+  HardLinkCount,
+  SymlinkDangling,
+  // 26장(시험 직전 정리) 전용 SVG — 문제→해결 사슬 순서도.
   SwappingProblemChain,
   ConcurrencyProblemChain,
+  PersistenceProblemChain,
   SyncPrimitivesMap,
 } as unknown as Record<string, React.ComponentType<unknown>>;

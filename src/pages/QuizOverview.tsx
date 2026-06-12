@@ -6,6 +6,7 @@ export function QuizOverview() {
   const cpuQuizzes = quizIndex.filter((q) => q.partId === 'cpu');
   const memQuizzes = quizIndex.filter((q) => q.partId === 'memory');
   const concurrencyQuizzes = quizIndex.filter((q) => q.partId === 'concurrency');
+  const persistenceQuizzes = quizIndex.filter((q) => q.partId === 'persistence');
 
   return (
     <div className={s.page}>
@@ -52,6 +53,22 @@ export function QuizOverview() {
           <p className={s.partDesc}>Thread, lock, condition variable, semaphore.</p>
           <div className={s.quizGrid}>
             {concurrencyQuizzes.map((q) => (
+              <Link key={q.slug} to={`/quiz/${q.slug}`} className={s.quizCard}>
+                <span className={s.quizCardNumber}>Ch. {String(q.chapterNumber).padStart(2, '0')}</span>
+                <span className={s.quizCardTitle}>{q.title}</span>
+                {q.subtitle && <span className={s.quizCardMeta}>{q.subtitle}</span>}
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {persistenceQuizzes.length > 0 && (
+        <section className={s.partSection}>
+          <h2 className={s.partTitle}>Part 4. 영속성 (Persistence)</h2>
+          <p className={s.partDesc}>File, directory, inode, fd.</p>
+          <div className={s.quizGrid}>
+            {persistenceQuizzes.map((q) => (
               <Link key={q.slug} to={`/quiz/${q.slug}`} className={s.quizCard}>
                 <span className={s.quizCardNumber}>Ch. {String(q.chapterNumber).padStart(2, '0')}</span>
                 <span className={s.quizCardTitle}>{q.title}</span>

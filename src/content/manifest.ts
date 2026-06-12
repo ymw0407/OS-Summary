@@ -1,6 +1,6 @@
 import type { ComponentType } from 'react';
 
-export type PartId = 'cpu' | 'memory' | 'concurrency';
+export type PartId = 'cpu' | 'memory' | 'concurrency' | 'persistence';
 
 export type MdxModule = { default: ComponentType<{ components?: Record<string, ComponentType<unknown>> }> };
 
@@ -36,6 +36,11 @@ export const parts: PartMeta[] = [
     id: 'concurrency',
     title: 'Part 3. 동시성 (Concurrency)',
     description: 'Thread, race condition, critical section, lock — 한 프로세스 안에서 여러 실행 흐름을 안전하게 다루는 방법',
+  },
+  {
+    id: 'persistence',
+    title: 'Part 4. 영속성 (Persistence)',
+    description: 'File, directory, inode, fd — 데이터를 전원이 꺼져도 남게 저장하고 이름 붙여 찾는 방법',
   },
 ];
 
@@ -271,13 +276,22 @@ export const chapters: ChapterMeta[] = [
     loader: () => import('./24-common-concurrency-problems.mdx'),
   },
   {
-    slug: '25-exam-summary',
+    slug: '25-files-and-directories',
     number: 25,
+    title: 'Files and Directories',
+    subtitle: 'inode · fd · open/read/write/lseek · fork/dup · fsync · link/unlink · symlink',
+    partId: 'persistence',
+    lineRange: [3380, 3380],
+    loader: () => import('./25-files-and-directories.mdx'),
+  },
+  {
+    slug: '26-exam-summary',
+    number: 26,
     title: '시험 직전 정리',
-    subtitle: 'Swapping Mechanisms부터 Concurrency Bugs까지 — 전체 흐름 한눈에',
-    partId: 'concurrency',
+    subtitle: 'Swapping Mechanisms부터 Files and Directories까지 — 전체 흐름 한눈에',
+    partId: 'persistence',
     lineRange: [3157, 3380],
-    loader: () => import('./25-exam-summary.mdx'),
+    loader: () => import('./26-exam-summary.mdx'),
   },
 ];
 

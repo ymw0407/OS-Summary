@@ -9,7 +9,7 @@ export type QuizIndexEntry = {
   chapterNumber: number;
   title: string;
   subtitle?: string;
-  partId: 'cpu' | 'memory' | 'concurrency';
+  partId: 'cpu' | 'memory' | 'concurrency' | 'persistence';
   loader: QuizLoader;
 };
 
@@ -196,6 +196,14 @@ export const quizIndex: QuizIndexEntry[] = [
     subtitle: 'Atomicity/Order violation · Deadlock 4조건 · Prevention 매핑',
     partId: 'concurrency',
     loader: () => import('./ch24'),
+  },
+  {
+    slug: '25-files-and-directories',
+    chapterNumber: 25,
+    title: 'Files and Directories',
+    subtitle: 'inode · fd 사슬 · offset · fsync/rename · link count',
+    partId: 'persistence',
+    loader: () => import('./ch25'),
   },
 ];
 

@@ -1,10 +1,10 @@
 <Callout kind="summary" title="이 장의 목적">
-시험 직전에 한 번에 훑는 페이지입니다. <b>Swapping: Mechanisms(15장)부터 Common Concurrency Problems(24장)까지</b> — 각 장이 &ldquo;어떤 문제 때문에 등장했고, 어떤 한계가 다음 개념을 불렀는가&rdquo; 관점으로 한 줄기로 이어집니다. 자세한 내용이 필요하면 각 절의 링크로 해당 장에 바로 들어갈 수 있습니다.
+시험 직전에 한 번에 훑는 페이지입니다. <b>Swapping: Mechanisms(15장)부터 Files and Directories(25장)까지</b> — 각 장이 &ldquo;어떤 문제 때문에 등장했고, 어떤 한계가 다음 개념을 불렀는가&rdquo; 관점으로 한 줄기로 이어집니다. 자세한 내용이 필요하면 각 절의 링크로 해당 장에 바로 들어갈 수 있습니다.
 </Callout>
 
-## 전체 지도 — 두 개의 큰 이야기
+## 전체 지도 — 세 개의 큰 이야기
 
-이 범위는 크게 **두 개의 이야기** 로 나뉜다.
+이 범위는 크게 **세 개의 이야기** 로 나뉜다.
 
 ```txt
 이야기 1. 메모리의 마지막 조각 — "물리 메모리가 부족하면?"
@@ -27,6 +27,13 @@
     → 도구를 다 갖춰도 버그는 남는다 (24장: Common Concurrency Problems)
        · 안 멈추는 버그: atomicity violation(→lock) · order violation(→CV)
        · 멈추는 버그: deadlock 4조건 → prevention / avoidance / detect&recover
+
+이야기 3. 영속성 — "데이터를 전원이 꺼져도 남게 하려면?" (25장: Files & Directories)
+  file = byte 배열 + inode(진짜 이름) · directory = (이름, inode) 쌍의 특수 파일
+    → open() → fd → open file entry(offset) → inode 의 사슬
+    → 따로 open = offset 독립 / fork·dup = entry 공유 = offset 공유
+    → write는 버퍼까지 → 보장은 fsync, 안전 저장 = tmp + fsync + atomic rename
+    → 삭제 = unlink (link count 0이어야 데이터 해제) · hard link vs symlink
 ```
 
 ## 순서도로 보기 — 무엇이 막혀서, 무엇을 도입했나
@@ -36,6 +43,8 @@
 <SwappingProblemChain caption="이야기 1 (15~16장). 'DRAM 부족' 하나에서 출발해 swap space → present bit → page fault handler → replacement policy(OPT → FIFO → LRU → Clock) → dirty bit까지 — 각 단계는 바로 앞 단계가 남긴 구멍을 메우기 위해 등장했다. 마지막 thrashing은 swapping 자체의 근본 한계." />
 
 <ConcurrencyProblemChain caption="이야기 2 (18~24장). thread 도입이 만든 race condition을 lock으로 막고, lock의 구멍(atomicity 없음 → spin 낭비 → starvation → lost wakeup)을 HW와 OS가 차례로 메운다. lock이 완성되면 자료구조(fine-grained)와 조건 대기(CV)로 확장되고, semaphore가 전부를 하나로 통합한다. 마지막 24장은 그래도 남는 버그들 — atomicity/order violation과 deadlock — 의 진단·처방." />
+
+<PersistenceProblemChain caption="이야기 3 (25장). '전원이 꺼져도 남게 + 이름으로 찾게' 라는 요구에서 출발해 inode → directory → fd/offset 사슬 → fsync·rename 의 영속성 보장 → link/unlink 까지. 핵심 축은 '이름과 데이터(inode)의 분리'다." />
 
 ### 비슷한 도구들은 서로를 만든다 — Lock · CV · Semaphore
 
@@ -365,6 +374,45 @@ mutex = 1     put/get만 감싸는 binary semaphore
 
 ---
 
+# 이야기 3 — Persistence: 파일과 디렉터리
+
+## 10. Files and Directories — 이름과 데이터의 분리
+
+> 자세히: <a href="#/ch/25-files-and-directories">25장 Files and Directories</a>
+
+- **핵심 구도**: 파일 = **byte 배열 + inode**(커널용 진짜 이름, 파일 시스템 내 유일) / 디렉터리 = **(이름, inode 번호) 쌍을 담는 특수 파일**
+- **경로 해석**: `/foo/bar.txt` = "/ 의 entry에서 foo 찾기 → foo 의 inode → 그 안에서 bar.txt 찾기 → inode" — 이름→inode 변환의 반복
+
+### fd 사슬 (시험 단골 — "어느 층에 사는가")
+
+```txt
+fd (프로세스별 정수, 0/1/2 예약·가장 작은 빈 칸)
+  → open file table entry (struct file: ref · readable/writable · offset · inode 포인터)
+  → inode (metadata — stat()이 보는 곳)
+  → data blocks
+```
+
+| 상황 | offset |
+| --- | --- |
+| 같은 파일을 **따로 open** | entry 가 따로 → **독립** |
+| **fork** 로 fd 상속 / **dup** 으로 복제 | 같은 entry 공유(ref↑) → **공유** (자식의 lseek 가 부모에게 보임) |
+
+- **lseek 는 offset 정수만 변경** — disk I/O 없음 / read·write 는 offset 자동 증가, read 반환 0 = **EOF**
+- **redirection**: `close(1)` 후 open → 가장 작은 빈 칸 규칙으로 파일이 fd 1 차지
+
+### 영속성 보장 (시험 단골)
+
+- `write()` 는 **버퍼(page cache)까지만** — crash 시 유실 가능 → **fsync(fd)** 로 강제 반영, 새 파일은 **fsync(dirfd)** 로 "이름의 존재"까지
+- **안전 저장 패턴**: tmp 에 write → fsync → close → **rename** (atomic — 옛 파일 아니면 새 파일, 중간 상태 없음)
+
+### link / unlink (시험 단골)
+
+- **hard link** (`ln`): 새 inode 생성 없이 기존 inode 에 이름만 추가 — 원본/사본 구분 없는 **동등한 이름들**
+- **삭제 = unlink**: 이름↔inode 연결 제거 + link count 감소 → **0 이 되어야** inode/data 해제 (예: file→file2→file3 만들면 Links 3, rm 하나당 -1)
+- **symbolic link** (`ln -s`): **자기 inode 를 가진 별도 파일**로 "대상 경로 문자열" 저장 (크기 = 경로 글자 수) — 다른 파일 시스템/디렉터리 가능, 원본 삭제 시 **dangling reference**
+
+---
+
 ## 최종 큰 흐름 한 줄 요약
 
 - **DRAM이 부족하다** → swap space + present bit + page fault로 disk를 메모리처럼 → **15장**
@@ -376,6 +424,7 @@ mutex = 1     put/get만 감싸는 binary semaphore
 - **조건 기다리기** → CV + state + lock 3박자, Mesa라서 while → **22장**
 - **셋을 하나로** → semaphore: 초기값 1이면 lock, 0이면 signal, N이면 자원 카운터 → **23장**
 - **그래도 남는 버그** → 안 멈추면 atomicity(lock)/order(CV), 멈추면 deadlock 4조건 → 깨거나·피하거나·찾아서 복구 → **24장**
+- **전원이 꺼져도 남게** → 파일=byte 배열+inode, 디렉터리=(이름,inode) 표, fd→entry→inode 사슬, fsync+atomic rename, unlink와 link count → **25장**
 
 ---
 
@@ -416,7 +465,13 @@ mutex = 1     put/get만 감싸는 binary semaphore
     - 매핑: CW→순서 고정(실용적), H&W→한꺼번에, NP→trylock(livelock 주의), ME→CAS lock-free
     - avoidance=스케줄로 회피(global knowledge, 병렬성↓) / detect&recover=cycle 찾아 abort(DB 표준)
     - deadlock(정지) vs livelock(돌지만 진전 없음) vs starvation(일부만 굶음)
+- **Files and Directories**
+    - 파일=byte 배열, 진짜 이름=inode(파일 시스템 내 유일) / 디렉터리=(이름,inode) 쌍의 특수 파일
+    - fd(0/1/2 예약, 최소 빈 칸) → open file entry(offset·ref) → inode(metadata, stat이 보는 곳) → data
+    - 따로 open=offset 독립 / fork·dup=entry 공유=offset 공유 / lseek=offset만 변경(disk I/O 없음) / read 0=EOF
+    - write는 버퍼까지 → fsync(fd)+fsync(dirfd) / 안전 저장 = tmp+fsync+rename(atomic)
+    - rm=unlink: link count 0이어야 해제 / hard link=같은 inode 동등 이름 / symlink=경로 문자열 파일(크기=글자 수, dangling 가능)
 
 <Callout kind="summary" title="마지막 한 줄">
-앞 절반은 <b>&ldquo;없는 메모리를 있는 척&rdquo;</b> (swap → page fault → replacement), 뒤 절반은 <b>&ldquo;같이 쓰는 메모리를 안 꼬이게&rdquo;</b> (race → lock → CV → semaphore, 그리고 그래도 남는 버그의 진단·처방). 두 이야기 모두 <i>하드웨어가 mechanism을 주고, OS가 policy로 완성한다</i>는 같은 패턴입니다.
+첫째는 <b>&ldquo;없는 메모리를 있는 척&rdquo;</b> (swap → page fault → replacement), 둘째는 <b>&ldquo;같이 쓰는 메모리를 안 꼬이게&rdquo;</b> (race → lock → CV → semaphore → 버그 진단·처방), 셋째는 <b>&ldquo;전원이 꺼져도 남게&rdquo;</b> (inode → fd 사슬 → fsync/rename → link). 세 이야기 모두 <i>하드웨어가 mechanism을 주고, OS가 policy로 완성한다</i>는 같은 패턴입니다.
 </Callout>

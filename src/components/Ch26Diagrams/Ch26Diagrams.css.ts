@@ -1,7 +1,7 @@
 import { style } from '@vanilla-extract/css';
 import { vars } from '../../styles/theme.css';
 
-// 25장(Files and Directories) 다이어그램 공통 컨테이너. 다른 장과 동일한 톤.
+// 26장(시험 직전 정리) 다이어그램 공통 컨테이너. 15·16장과 동일한 톤.
 export const diagram = style({
   margin: `${vars.space[5]} 0 ${vars.space[6]}`,
   padding: `${vars.space[4]} ${vars.space[3]}`,
